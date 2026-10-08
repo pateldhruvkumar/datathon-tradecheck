@@ -96,10 +96,10 @@ Honestly, the valuable part isn't the code, it's the data pipeline. A daily-refr
 ## Demo script (3 cases, live)
 
 1. **Clear** — "AgroDistribuidora del Bajío SA de CV" (fictional Mexican buyer): no hits across all lists → Clear\*, with "checked at" timestamp and the lists screened.
-2. **Caution** — "Chief Kahwa": matches a *Low-quality* alias of KHAWA PANGA MANDRO (UN list) → Caution: weak-alias hit flagged for human review, with the alias-quality evidence shown.
+2. **Caution** — "Khawa Mandro": the listed name without its middle name scores 0.83 → Caution, flagged for human review in the review queue, where the presenter confirms or dismisses it with a note. ("Chief Kahwa" turned out to be an exact OpenSanctions alias, so it scores 1.00 → Avoid.)
 3. **Avoid** — "KHAWA PANGA MANDRO": exact primary-name hit on the UN Consolidated List → Avoid, with identifiers, program, listing date, and source link.
 
-The three cases walk the full verdict taxonomy on real data.
+The three cases walk the full verdict taxonomy on real data. Questions and measured times are in [`RUN.md`](RUN.md#demo-cases).
 
 ## Key links
 

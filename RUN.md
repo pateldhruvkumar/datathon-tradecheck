@@ -57,13 +57,17 @@ No test reaches the network: every outside service is faked.
 
 ## Demo cases
 
-Filled in during the live check.
+Measured in the live check on 2026-10-08. Type each question exactly as written: the saved responses are keyed to the fields extracted from it.
 
 | Label | Question | Score | Time | Notes |
 | --- | --- | --- | --- | --- |
-| Avoid | | | | |
-| Caution | | | | |
-| Clear\* | | | | |
+| Avoid | Is KHAWA PANGA MANDRO sanctioned? | 1.00 | 25-29 s | Model report passed on the first attempt every time. "Chief Kahwa" is also Avoid (an exact OpenSanctions alias), and so is the question with "in Uganda" added. |
+| Caution | Can we sell to Khawa Mandro? | 0.83 | 20-37 s | The listed name without its middle name. Goes to the review queue. If the report call passes 40 s, the code-written template is shown instead. |
+| Clear\* | Can we ship to AgroDistribuidora del Bajío SA de CV in Mexico? | 0.00 | 4-6 s | No candidate; the UN check agrees. |
+
+- Over about two dozen live screens the free OpenSanctions key returned no HTTP 429.
+- With all three keys made invalid in the shell, all three cases replayed from saved responses (`live=False`, `parsed=saved`): Avoid, Caution and Clear\*.
+- The live-check review cases were dismissed with the note "live check, not a real case", so the queue starts empty.
 
 ## Troubleshooting
 
