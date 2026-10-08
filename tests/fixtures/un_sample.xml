@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trimmed sample in the UN Security Council consolidated-list format, for offline tests.
+     KHAWA PANGA MANDRO and his low-quality alias "Chief Kahwa" are on the public UN list
+     (the README's Oct 3 sample); the reference number and date here are placeholders.
+     TESTCO GLOBAL TRADING is synthetic. It covers the ENTITY path and every alias quality. -->
+<CONSOLIDATED_LIST dateGenerated="2026-10-07T23:00:03.504Z">
+  <INDIVIDUALS>
+    <INDIVIDUAL>
+      <DATAID>1</DATAID>
+      <FIRST_NAME>KHAWA</FIRST_NAME>
+      <SECOND_NAME>PANGA</SECOND_NAME>
+      <THIRD_NAME>MANDRO</THIRD_NAME>
+      <UN_LIST_TYPE>DRC</UN_LIST_TYPE>
+      <REFERENCE_NUMBER>CDi.000</REFERENCE_NUMBER>
+      <LISTED_ON>2005-11-01</LISTED_ON>
+      <INDIVIDUAL_ALIAS>
+        <QUALITY>Low</QUALITY>
+        <ALIAS_NAME>Chief Kahwa</ALIAS_NAME>
+      </INDIVIDUAL_ALIAS>
+    </INDIVIDUAL>
+  </INDIVIDUALS>
+  <ENTITIES>
+    <ENTITY>
+      <DATAID>2</DATAID>
+      <FIRST_NAME>TESTCO GLOBAL TRADING</FIRST_NAME>
+      <UN_LIST_TYPE>DPRK</UN_LIST_TYPE>
+      <REFERENCE_NUMBER>KPe.000</REFERENCE_NUMBER>
+      <LISTED_ON>2016-03-02</LISTED_ON>
+      <ENTITY_ALIAS><QUALITY>Good</QUALITY><ALIAS_NAME>BLUE HARBOUR LINES</ALIAS_NAME></ENTITY_ALIAS>
+      <ENTITY_ALIAS><QUALITY>Low</QUALITY><ALIAS_NAME>ORCHID CARGO</ALIAS_NAME></ENTITY_ALIAS>
+      <ENTITY_ALIAS><QUALITY/><ALIAS_NAME>TESTCO SHIPPING</ALIAS_NAME></ENTITY_ALIAS>
+      <ENTITY_ALIAS><QUALITY>Good</QUALITY><ALIAS_NAME/></ENTITY_ALIAS>
+    </ENTITY>
+  </ENTITIES>
+</CONSOLIDATED_LIST>
