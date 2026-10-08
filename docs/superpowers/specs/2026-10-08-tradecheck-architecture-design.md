@@ -60,7 +60,7 @@ OpenRouter request settings for both model calls:
 
 - `temperature: 0`, `seed: 42`
 - `response_format: {"type": "json_schema", "json_schema": {"name": ..., "strict": true, "schema": ...}}`
-- `provider: {"require_parameters": true}`, so the request only goes to providers that honour the JSON schema and seed
+- `provider: {"require_parameters": true, "sort": "throughput"}`, so the request only goes to providers that honour the JSON schema and seed, fastest first. The live check measured the report call at 44-64 s on default routing and 19 s routed by throughput.
 - `reasoning: {"effort": "low"}`, to keep the delay down. Measure it in the live check.
 
 ## 4. Module layout
@@ -342,7 +342,7 @@ One page with no framework, following the existing page's pattern of escaping al
 - Raises a read timeout, a certificate failure or a proxy refusal at once. A read timeout means the server is slow, so a retry would double the wait; the other two come back the same every time.
 - Calls `truststore.inject_into_ssl()` once when available, the same approach as `ingest/fetch.py`, so networks that inspect HTTPS still verify. Certificate verification is never turned off.
 
-Timeouts per call: yente 15 s, Tavily 15 s, OpenRouter 40 s.
+Timeouts per call: yente 15 s, Tavily 15 s, OpenRouter 40 s. The OpenRouter limit covers the whole call, retries included: `requests` only limits each socket read, and OpenRouter keeps the connection alive with whitespace while the model works, so `chat()` runs the request in a daemon thread and gives up when the time is spent.
 
 What happens when each service fails:
 

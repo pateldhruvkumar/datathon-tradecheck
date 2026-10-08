@@ -1,5 +1,7 @@
 """Retries, backoff and the OpenRouter call. requests is faked; nothing leaves the process."""
 
+import time
+
 import pytest
 import requests
 
@@ -71,12 +73,28 @@ def test_chat_sends_the_pinned_settings(fake_http):
     assert url == "https://openrouter.ai/api/v1/chat/completions"
     assert body["model"] == "qwen/qwen3.8-27b"
     assert (body["temperature"], body["seed"]) == (0, 42)
-    assert body["provider"] == {"require_parameters": True}
+    assert body["provider"] == {"require_parameters": True, "sort": "throughput"}
     assert body["reasoning"] == {"effort": "low"}
     assert body["response_format"] == {"type": "json_schema", "json_schema": {
         "name": "probe", "strict": True, "schema": {"type": "object"}}}
     assert kwargs["headers"] == {"Authorization": "Bearer test-key"}
     assert kwargs["timeout"] == 40
+
+
+def test_chat_gives_up_when_the_whole_call_outlasts_its_timeout(fake_http):
+    # requests' timeout limits each socket read, and OpenRouter keeps the connection alive
+    # with whitespace while the model works, so only a bound on the whole call stops it.
+    routes, _ = fake_http
+
+    def slow(kwargs):
+        time.sleep(1.0)
+        return chat_reply({"ok": True})
+
+    routes["openrouter.ai"] = slow
+    began = time.monotonic()
+    with pytest.raises(http.ModelError, match="no reply within 0.2 s"):
+        http.chat([], "probe", {}, timeout=0.2)
+    assert time.monotonic() - began < 0.9
 
 
 @pytest.mark.parametrize("answer, message", [

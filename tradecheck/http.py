@@ -9,6 +9,7 @@ HTTPS still verify -- the same approach as ``ingest/fetch.py``.
 from __future__ import annotations
 
 import os
+import threading
 import time
 
 import requests
@@ -68,11 +69,13 @@ def chat(messages: list[dict], name: str, schema: dict, timeout: float = CHAT_TI
         "temperature": 0,
         "seed": SEED,
         "response_format": {"type": "json_schema", "json_schema": {"name": name, "strict": True, "schema": schema}},
-        "provider": {"require_parameters": True},  # only providers that honour the schema and the seed
+        # only providers that honour the schema and the seed; the fastest of them
+        "provider": {"require_parameters": True, "sort": "throughput"},
         "reasoning": {"effort": "low"},
     }
     try:
-        resp = request("POST", OPENROUTER_URL, headers={"Authorization": f"Bearer {key}"}, json=body, timeout=timeout)
+        resp = _within(timeout, "POST", OPENROUTER_URL, headers={"Authorization": f"Bearer {key}"},
+                       json=body, timeout=timeout)
     except requests.RequestException as err:
         raise ModelError(f"no connection: {type(err).__name__}") from err
     if not resp.ok:
@@ -84,6 +87,29 @@ def chat(messages: list[dict], name: str, schema: dict, timeout: float = CHAT_TI
     if not isinstance(text, str) or not text.strip():
         raise ModelError("reply had no text")
     return text
+
+
+def _within(seconds: float, *args, **kwargs) -> requests.Response:
+    """request(), given up after ``seconds`` in total. requests' timeout limits each
+    socket read, and OpenRouter keeps the connection alive with whitespace while the
+    model works, so only a bound on the whole call stops a slow one. The abandoned
+    worker is a daemon thread, so it never holds up shutdown."""
+    box: dict = {}
+
+    def run():
+        try:
+            box["resp"] = request(*args, **kwargs)
+        except BaseException as err:  # re-raised in the caller's thread below
+            box["err"] = err
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(seconds)
+    if worker.is_alive():
+        raise ModelError(f"no reply within {seconds:g} s")
+    if "err" in box:
+        raise box["err"]
+    return box["resp"]
 
 
 def _error_message(resp: requests.Response) -> str:
