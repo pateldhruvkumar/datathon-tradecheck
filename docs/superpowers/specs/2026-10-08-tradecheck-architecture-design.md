@@ -3,7 +3,7 @@
 - **Date:** 2026-10-08
 - **Branch:** `dhruv/architecture-oct-08-2026`
 - **Source plan:** the workflow diagram "How a question moves through TradeCheck" (`tradecheck-workflow.html`, shared by Dhruv)
-- **Status:** design approved in chat, section by section. This document is pending spec review.
+- **Status:** approved 2026-10-08, then amended with the implementation plan (`docs/superpowers/plans/2026-10-08-tradecheck-screening-flow.md`, section "Spec amendments").
 
 ## 1. Goal
 
@@ -68,7 +68,7 @@ OpenRouter request settings for both model calls:
 ```
 tradecheck/
   __init__.py
-  http.py          request() with 3 retries, backoff 1/2/4 s, OS trust store
+  http.py          request() with 3 retries, backoff 1/2/4 s, OS trust store; chat(), the one OpenRouter call
   parse.py         Input: question -> query (model call 1)
   layer1_yente.py  match(), entity(), catalog_as_of(); saved-response fallback
   layer1_un.py     load() the UN XML at startup; check() -> agree/disagree/unavailable
@@ -96,7 +96,7 @@ question
  -> parse.extract(question)        -> query
  -> layer1_yente.match(query)      -> match
  -> layer1_un.check(query, match)  -> un
- -> layer2.band(match, un)         -> band
+ -> layer2.band(match, un, fallback) -> band
  -> layer3.report(query, match, un, band)   (review and hit only) -> report
  -> audit.log(screen_id, step, data)        after every step
 ```
@@ -127,9 +127,9 @@ Code then builds the yente query:
 | Company | `name`, `jurisdiction`, `registrationNumber` |
 | LegalEntity | `name`, `country` |
 
-Each value is sent as a one-item list. The returned query dict also carries `source: "model"`.
+Each value is sent as a one-item list. The returned query dict holds the cleaned fields, `source` (`"model"` or `"fallback"`), `fallback_reason` (why the model failed, or null) and `properties` (what is sent to yente).
 
-**Fallback:** if the model call fails after its transport retries, or returns unusable JSON, the raw question text is screened as the name, with `schema: "LegalEntity"` and `source: "fallback"`. The UI says the fields could not be extracted.
+**Fallback:** if the model call fails after its transport retries, or returns unusable JSON, the raw question text is screened as the name, with `schema: "LegalEntity"` and `source: "fallback"`. The UI says the fields could not be extracted. A fallback result is never clear (section 5.4), because a listed name inside a full sentence can score below 0.70.
 
 ### 5.2 Layer 1a: `layer1_yente`
 
@@ -160,25 +160,26 @@ Constants: `COLLECTION = "sanctions"`, `ALGORITHM = "logic-v2"`, `THRESHOLD = 0.
 
 ```json
 {"status": "agree | disagree | unavailable",
- "best": {"ref": "...", "name": "...", "matched_name": "...", "quality": "primary | Good | Low", "score": 0.0},
- "reason": "..."}
+ "best": {"ref": "...", "name": "...", "matched_name": "...", "quality": "primary | Good | Low | unrated",
+          "score": 0.0, "listed_on": "...", "list_type": "..."},
+ "reason": "...", "list_date": "<the UN file's dateGenerated>"}
 ```
 
-`best` is `null` when nothing scores. `match` may be `None` (yente unavailable); the check still runs and is logged, treating yente's top score as 0. The band is unknown in that case anyway. Scoring:
+`best` is the highest weighted score among UN names at least 70% similar to the query (a WRatio of 70 or more before weighting), or `null` when there are none. `match` may be `None` (yente unavailable); the check still runs and is logged, treating yente's top score as 0. The band is unknown in that case anyway. If the query's name normalizes to nothing (for example, a name with no Latin letters), the check is `unavailable`, so the result can't be clear. Scoring:
 
 - `score = fuzz.WRatio(query_norm, name_norm) / 100 * weight`
-- Weights: primary name 1.0, `Good` alias 0.85, `Low` alias 0.60, missing quality 0.85. These come from the README's Oct 3 test on the UN sample.
+- Weights: primary name 1.0, `Good` alias 0.85, `Low` alias 0.60, missing quality (`unrated`) 0.85. These come from the README's Oct 3 test on the UN sample.
 
 Disagreement rules:
 
 - **Strong UN match:** `best.score >= 0.90`.
 - **Disagree (a):** a strong UN match exists, but yente's top score is below 0.70 (0 when there are no candidates). yente may have missed a UN listing.
-- **Disagree (b):** yente's top candidate scores 0.70 or higher and lists `un_sc_sanctions` in its `datasets`, but the UN check's best score is below 0.70. This suggests a delisting or a data lag.
+- **Disagree (b):** yente's top candidate scores 0.70 or higher and lists `un_sc_sanctions` in its `datasets`, but no UN name is at least 70% similar to the query (`best` is null). This suggests a delisting or a data lag. The rule uses similarity rather than the weighted score because a `Low` alias tops out at 0.60, and an exact `Low` alias match, such as "Chief Kahwa", is not a disagreement.
 - **Agree:** everything else.
 
-### 5.4 Layer 2: `layer2.band(match, un) -> band`
+### 5.4 Layer 2: `layer2.band(match, un, fallback=False) -> band`
 
-The pipeline catches `YenteUnavailable` and passes `match=None`. Rules are checked in this order:
+The pipeline catches `YenteUnavailable` and passes `match=None`, and passes `fallback=True` when the fields came from the fallback (section 5.1). Rules are checked in this order:
 
 ```
 match is None (yente unavailable)      -> unknown
@@ -186,10 +187,10 @@ score = top candidate score, or 0 if there are no candidates
 score >= HIT_AT (0.90)                 -> hit
 CLEAR_BELOW (0.70) <= score < HIT_AT   -> review
 score < CLEAR_BELOW                    -> clear
-then: un.status is not "agree" and band is clear -> review
+then: band is clear and (un.status is not "agree" or fallback) -> review
 ```
 
-A UN disagreement can only raise clear to review. It never lowers a hit.
+A UN doubt or a fallback extraction can only raise clear to review. It never lowers a hit.
 
 Returns `{"band", "score", "cutoffs": {"clear_below": 0.70, "hit_at": 0.90}, "reasons": [...]}`. Reasons are readable strings, for example `score 0.83 between 0.70 and 0.90` or `UN check disagrees: UN match "X" scored 0.93 but is not in the yente results`.
 
@@ -229,21 +230,22 @@ Steps:
 ```
 
 5. **Citation check (code):** every claim, including the summary, cites at least one key, and every cited key exists in the bundle.
-6. **Retries:** if the JSON is invalid or the citation check fails, call the model again and include the list of failures (for example `claim 3 in "sanctions" cites unknown key X`). Up to 3 retries, so at most 4 attempts. These are separate from the transport retries in `http.py`.
-7. **Deadline:** once Layer 3 has run for `DEADLINE_S` seconds, no new attempt starts.
+6. **Retries:** if the JSON is invalid or the citation check fails, call the model again and include the list of failures (for example `claim 3 in "sanctions" cites unknown key X`). Up to 3 retries, so at most 4 attempts. These are separate from the transport retries in `http.py`. A model error (no connection, an HTTP error, or a reply with no text) goes straight to the template, because the transport has already retried it.
+7. **Deadline:** once Layer 3 has run for `DEADLINE_S` seconds, no new attempt starts, and each model call's timeout is capped at the time left.
 8. **Template fallback:** if all attempts fail, or the deadline passes, code builds the same sections from the bundle: name, schema and datasets; the features that matched; the features that don't match; programs and dates; news headlines with URLs. Each line carries its own citation keys, so the template always passes the citation check.
 
-The returned report adds fields the model never writes: `sources` (every cited item with its URL), `next_step`, `check` (`pass`, or `template` with the reason), `attempts`, `model`, `prompt_version`.
+The returned report adds fields the model never writes: `sources` (every cited item with its URL), `next_step`, `check` (`pass` or `template`), `check_reason` (why the template was used), `attempts`, `model`, `prompt_version`, `seed`, and `steps` (whether the entity lookup and the news search worked). Only `http://` and `https://` URLs enter the bundle, so the page never renders another kind of link.
 
 `next_step` is fixed text per band:
 
 - review: "An analyst should compare the details and confirm or dismiss this match."
 - hit: "Hold and escalate. Don't proceed until reviewed."
 
-The pipeline also builds reports for the other two bands without any model call:
+The pipeline also builds fixed reports, with `check: "fixed"` and no model call, for the cases Layer 3 doesn't run on:
 
 - **clear:** no candidate reached 0.70 in the `sanctions` collection (US, Canada, EU, UK, UN and more) as of the data date, and the UN check agrees.
 - **unknown:** "Live check failed: <reason>. Not clear. Retry."
+- **review with no matcher candidate**, raised by the UN check or a fallback extraction: the band's reasons, with the review next step. There is no candidate for Layer 3 to explain.
 
 ### 5.6 `POST /screen` response
 
@@ -253,10 +255,11 @@ The pipeline also builds reports for the other two bands without any model call:
   "question": "Can we ship to Northwind Metals FZE in Dubai?",
   "parsed": {"schema": "Company", "name": "Northwind Metals FZE", "country": "ae", "source": "model"},
   "band": "review", "label": "Caution", "score": 0.83,
+  "reasons": ["score 0.83 between 0.70 and 0.90"],
   "status": "pending_review",
   "candidates": [{"id": "NK-...", "caption": "...", "score": 0.83, "datasets": ["..."]}],
   "un_check": {"status": "agree", "best": null},
-  "live": true,
+  "live": true, "fetched_at": "...",
   "report": {"summary": {}, "sections": {}, "sources": [], "check": "pass", "attempts": 1},
   "as_of": "...", "checked_at": "...",
   "disclaimer": "Not legal advice. Screening reflects the listed sources as of the dates shown."
@@ -280,6 +283,7 @@ CREATE TABLE IF NOT EXISTS events (
   data      TEXT NOT NULL    -- JSON
 );
 CREATE INDEX IF NOT EXISTS events_screen ON events(screen_id);
+CREATE UNIQUE INDEX IF NOT EXISTS one_review_per_screen ON events(screen_id) WHERE step = 'review';
 CREATE TRIGGER IF NOT EXISTS events_no_update BEFORE UPDATE ON events
   BEGIN SELECT RAISE(ABORT, 'audit log is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events
@@ -305,7 +309,7 @@ Functions: `log(screen_id, step, data)`, `record(screen_id)`, `queue()`, `review
 - The diagram's "one row per screen" is `GET /audit/{screen_id}`, which returns that screen's events in order.
 - Every screen ends with a `final` event. A review adds a second `final` event; the latest `final` event is the current status, so nothing is ever overwritten.
 - **Review queue:** screens whose `layer2` event has band `review` and that have no `review` event yet. This is one SQL query using `json_extract`, with no extra table.
-- **`POST /review/{id}`** takes `{"decision": "confirm" | "dismiss", "note": "...", "reviewer": "..."}`. The note and reviewer are required. It writes a `review` event and a `final` event with status `reviewed`, and the decision says whether the match was confirmed (escalate) or dismissed (false positive).
+- **`POST /review/{id}`** takes `{"decision": "confirm" | "dismiss", "note": "...", "reviewer": "..."}`. The note and reviewer are required. It writes a `review` event and a `final` event with status `reviewed`, and the decision says whether the match was confirmed (escalate) or dismissed (false positive). The partial unique index `one_review_per_screen` allows one review per screen, so two reviewers at once can't both succeed.
 
 API errors:
 
@@ -324,7 +328,7 @@ One page with no framework, following the existing page's pattern of escaping al
 - **Question box:** a free-text question.
 - **Result card:**
   - the label and status stamp, the extracted fields (with a note when the fallback was used) and the score
-  - the report sections; each citation links to `https://www.opensanctions.org/entities/<id>/` for entity keys, or to the article URL for news keys
+  - the report sections; each citation links to `https://www.opensanctions.org/entities/<id>/` for the candidate, to the official source URL for a sanction entry (or the candidate's page when it has none), to the article URL for news, and to the UN list for the UN record
   - the next step, sources, as-of date, checked-at time, disclaimer and a "View audit record" link
 - **Review queue panel:** lists pending cases. Opening one shows the query and the top candidate side by side with the report, plus Confirm and Dismiss buttons, a note field and a reviewer-name field.
 - **Footer:** "Sanctions data: OpenSanctions, CC BY-NC 4.0. Not legal advice."
@@ -334,7 +338,8 @@ One page with no framework, following the existing page's pattern of escaping al
 `http.request(method, url, *, headers, json, params, timeout)`:
 
 - Retries up to 3 times after the first attempt, waiting 1, 2 and 4 seconds.
-- Retries only on a timeout, a connection error, HTTP 429 or HTTP 5xx. Any other 4xx error is returned at once.
+- Retries only on a dropped connection (including a connect timeout), HTTP 429 or HTTP 5xx. Any other 4xx error is returned at once.
+- Raises a read timeout, a certificate failure or a proxy refusal at once. A read timeout means the server is slow, so a retry would double the wait; the other two come back the same every time.
 - Calls `truststore.inject_into_ssl()` once when available, the same approach as `ingest/fetch.py`, so networks that inspect HTTPS still verify. Certificate verification is never turned off.
 
 Timeouts per call: yente 15 s, Tavily 15 s, OpenRouter 40 s.
@@ -345,7 +350,7 @@ What happens when each service fails:
 |---|---|
 | OpenSanctions match | Saved response, labelled with its date; with none saved, the band is unknown |
 | OpenSanctions entity lookup | Report built from the match result's properties |
-| OpenRouter during extraction | Raw question screened as the name (`source: fallback`) |
+| OpenRouter during extraction | Raw question screened as the name (`source: fallback`); the result can't be clear |
 | OpenRouter during the report | Template report |
 | Tavily | News section says "News search unavailable"; the report continues |
 | UN XML missing | UN status unavailable, so the result cannot be clear |
@@ -369,17 +374,19 @@ Needs the keys in `.env`; the team types them in.
 
 ## 10. Testing
 
-pytest, fully offline: `http.request` is replaced by a fake that returns recorded responses.
+pytest, fully offline: `http.request` is replaced by a fake that returns recorded responses. `tests/fakes.py` holds the fake response helpers; `tests/conftest.py` fails any test that reaches the network, sets test keys, and gives each test its own database.
 
 | Test file | What it proves |
 |---|---|
-| `test_layer2.py` | The full band table; a UN disagreement only raises clear to review; unknown when the match is unavailable |
-| `test_layer1_un.py` | A small UN XML fixture with a `Low` alias: alias weights; disagree cases (a) and (b); unavailable when there is no file |
-| `test_layer3.py` | Citation check pass and fail; exactly 3 retries, then the template; the template passes its own check |
-| `test_http.py` | 3 retries on 503; no retry on 401 |
+| `test_layer2.py` | The full band table; a UN doubt or a fallback extraction only raises clear to review; unknown when the match is unavailable |
+| `test_layer1_un.py` | A small UN XML fixture with every alias quality: alias weights; a `Low` alias match agrees; disagree cases (a) and (b); unavailable for a missing or truncated file and for a name with no Latin letters |
+| `test_layer1_yente.py` | The pinned query; best-first candidates; the saved response replayed with `live: false`; unavailable with nothing saved; the entity lookup and the catalog date |
+| `test_layer3.py` | Citation check pass and fail; exactly 3 retries, then the template; a model error goes straight to the template; the deadline and the per-call timeout cap; only http(s) links in the bundle; the template passes its own check |
+| `test_http.py` | 3 retries on 503 with 1/2/4 s backoff; no retry on 401, a read timeout, a certificate or a proxy failure; `chat()` sends the pinned settings and turns every failure into `ModelError` |
 | `test_audit.py` | UPDATE and DELETE are rejected by the triggers; the queue skips reviewed cases; a second review is refused |
 | `test_parse.py` | Validation drops a bad country and date; fallback on a model failure; null name gives the no-party error |
-| `test_pipeline.py` | End to end with fake services for clear, review, hit and unknown, including the audit events written |
+| `test_pipeline.py` | End to end with fake services for clear, review, hit and unknown, the saved-response fallback, a review with no candidate and a fallback extraction, including the audit events written |
+| `test_app.py` | The API's 422, 404, 400 and 409 answers |
 | `test_fetch.py` | Adapted to the `un_sc` source |
 | `test_normalize.py` | Unchanged |
 
