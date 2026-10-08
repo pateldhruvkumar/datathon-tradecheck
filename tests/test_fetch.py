@@ -63,7 +63,7 @@ def test_certificate_failure_gets_tls_hint_not_proxy_hint(
     monkeypatch.setattr(fetch, "MANIFEST", tmp_path / "manifest.json")
     monkeypatch.setattr(fetch, "_use_os_trust_store", lambda: trust_os)
 
-    fetch.fetch(only=["ca_sema"])
+    fetch.fetch(only=["un_sc"])
 
     err = capsys.readouterr().err
     assert "Certificate verification failed" in err

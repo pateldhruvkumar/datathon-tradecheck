@@ -6,6 +6,9 @@ __pycache__/
 venv/
 *.egg-info/
 
-# TradeCheck data: downloaded source lists and the built store are not committed
+# TradeCheck data: the downloaded UN list and the audit database are not committed
 data/raw/
-data/*.duckdb
+data/*.sqlite*
+
+# API keys
+.env
