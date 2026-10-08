@@ -205,7 +205,7 @@ Mapping to the user-facing values:
 
 ### 5.5 Layer 3: `layer3.report(query, match, un, band) -> report`
 
-Runs for review and hit only. Constants: `MODEL = "qwen/qwen3.8-27b"`, `PROMPT_VERSION = "report-v1"`, `SEED = 42`, `MAX_RETRIES = 3`, `DEADLINE_S = 60`.
+Runs for review and hit only. Constants: `MODEL = "qwen/qwen3.8-27b"`, `PROMPT_VERSION = "report-v2"`, `SEED = 42`, `MAX_RETRIES = 3`, `DEADLINE_S = 60`.
 
 Steps:
 
@@ -216,7 +216,7 @@ Steps:
    - The ID of each nested sanction entry: program, authority, start date, source URL.
    - The article URL for each news result: title, excerpt (`content`), `published_date`.
    - `UN:<ref>` for the UN record, if the UN check matched one.
-4. **Model call 2.** The system prompt says: use only the bundle; every claim must cite at least one bundle key; state facts and differences only; no verdicts, no recommendations, no legal advice. The bundle and the band are sent as JSON. The model returns:
+4. **Model call 2.** The system prompt says: use only the bundle; every claim must cite at least one bundle key; state facts and differences only; no verdicts, no recommendations, no legal advice; at most 5 claims per section, one sentence each, with sanctions grouped by authority or program (report-v2: the live check measured 11-17 s instead of 19-21 s, and 5 sanctions claims instead of 15). The bundle and the band are sent as JSON. The model returns:
 
 ```json
 {

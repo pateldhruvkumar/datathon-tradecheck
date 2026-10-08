@@ -104,7 +104,7 @@ def test_a_good_report_on_the_first_attempt(services):
     assert rep["sections"]["sanctions"] == GOOD["sanctions"]
     assert rep["next_step"] == "Hold and escalate. Don't proceed until reviewed."
     assert [s["key"] for s in rep["sources"]] == ["NK-kpm", "ofac-s-1", "https://news.example/a", "UN:CDi.000"]
-    assert (rep["model"], rep["prompt_version"], rep["seed"]) == ("qwen/qwen3.8-27b", "report-v1", 42)
+    assert (rep["model"], rep["prompt_version"], rep["seed"]) == ("qwen/qwen3.8-27b", "report-v2", 42)
     assert rep["steps"] == {"entity": "ok", "news": "ok"}
 
 

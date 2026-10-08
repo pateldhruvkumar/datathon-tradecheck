@@ -16,7 +16,7 @@ import requests
 
 from tradecheck import http, layer1_un, layer1_yente
 
-PROMPT_VERSION = "report-v1"
+PROMPT_VERSION = "report-v2"
 MAX_RETRIES = 3   # after the first attempt, so at most 4 model calls
 DEADLINE_S = 60   # no new attempt starts after this
 TAVILY_URL = "https://api.tavily.com/search"
@@ -41,7 +41,9 @@ Sections:
 - differences: details of the query that differ from the listing or are missing from it.
 - sanctions: programs, authorities and dates.
 - news: one claim per relevant article, citing its URL.
-Leave a section empty when the bundle has nothing for it."""
+Leave a section empty when the bundle has nothing for it.
+Keep the report short enough to read aloud: at most 5 claims per section, one sentence each.
+In sanctions, group the entries by authority or program instead of one claim per entry."""
 
 _CLAIM = {
     "type": "object",
