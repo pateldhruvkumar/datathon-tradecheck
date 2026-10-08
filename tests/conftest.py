@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 import requests
 
-from tradecheck import http
+from tradecheck import audit, http
 
 
 @pytest.fixture(autouse=True)
@@ -44,3 +44,10 @@ def fake_http(monkeypatch):
 
     monkeypatch.setattr(http, "request", fake_request)
     return routes, calls
+
+
+@pytest.fixture(autouse=True)
+def db(tmp_path, monkeypatch):
+    """Each test gets its own empty audit database instead of data/tradecheck.sqlite."""
+    monkeypatch.setattr(audit, "DB_PATH", tmp_path / "tradecheck.sqlite")
+    audit.init()
