@@ -27,7 +27,7 @@ SOURCE_URL = (
 _FIELDS = {
     "last_name": ("lastname", "last_name", "surname", "nom"),
     "given_name": ("givenname", "given_name", "firstname", "first_name", "prenom"),
-    "entity": ("entity", "entityname", "entity_name", "name", "corporatename"),
+    "entity": ("entityorship", "entity", "entityname", "entity_name", "name", "corporatename"),
     "aliases": ("aliases", "alias", "aka", "alsoknownas"),
     "dob": ("dateofbirth", "dob", "dateofbirthorshipbuilddate", "birthdate"),
     "country": ("country", "pays"),
@@ -51,7 +51,7 @@ def _record_fields(record: etree._Element) -> dict[str, str]:
     """Collapse a <record>'s children into {logical_field: text}."""
     out: dict[str, str] = {}
     for child in record:
-        field = _TAG_TO_FIELD.get(_ln(child).lower())
+        field = _TAG_TO_FIELD.get(_ln(child).split("-")[0].lower())
         if field and child.text and child.text.strip() and field not in out:
             out[field] = child.text.strip()
     return out
