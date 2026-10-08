@@ -129,7 +129,7 @@ Code then builds the yente query:
 
 Each value is sent as a one-item list. The returned query dict holds the cleaned fields, `source` (`"model"` or `"fallback"`), `fallback_reason` (why the model failed, or null) and `properties` (what is sent to yente).
 
-**Fallback:** if the model call fails after its transport retries, or returns unusable JSON, the raw question text is screened as the name, with `schema: "LegalEntity"` and `source: "fallback"`. The UI says the fields could not be extracted. A fallback result is never clear (section 5.4), because a listed name inside a full sentence can score below 0.70.
+**Fallback:** if the model call fails after its transport retries, or returns unusable JSON, the raw question text is screened as the name, with `schema: "LegalEntity"` and `source: "fallback"`. The UI says the fields could not be extracted. A fallback result is never clear (section 5.4), because a listed name inside a full sentence can score below 0.70. Before falling back, the pipeline looks in the audit log for a model extraction of the identical question; if one exists, its fields are reused with `source: "saved"`. The query then matches the earlier one, so a saved yente response still replays when the whole network is down (section 9).
 
 ### 5.2 Layer 1a: `layer1_yente`
 

@@ -172,6 +172,9 @@
       if (p.source === "fallback") {
         html += `<p class="note">The fields could not be extracted (${esc(p.fallback_reason)}), so the whole question was screened as a name.</p>`;
       }
+      if (p.source === "saved") {
+        html += `<p class="note">The model was unavailable (${esc(p.fallback_reason)}), so the fields it extracted the last time this exact question was asked were used.</p>`;
+      }
       return html;
     }
 

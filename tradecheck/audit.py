@@ -122,6 +122,17 @@ def review(screen_id: str, decision: str, note: str, reviewer: str) -> dict:
     return final
 
 
+def saved_extraction(question: str) -> dict | None:
+    """The fields the model last extracted for this exact question, or None."""
+    with _db() as con:
+        row = con.execute(
+            "SELECT json_extract(data, '$.parsed') FROM events WHERE step = 'input' "
+            "AND json_extract(data, '$.question') = ? AND json_extract(data, '$.source') = 'model' "
+            "ORDER BY id DESC LIMIT 1", (question,)
+        ).fetchone()
+    return None if row is None else json.loads(row[0])
+
+
 def cache_put(query_hash: str, candidates: list, fetched_at: str) -> None:
     with _db() as con:
         con.execute(

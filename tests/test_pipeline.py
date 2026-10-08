@@ -104,6 +104,20 @@ def test_the_saved_result_is_used_when_yente_goes_down(world):
     assert (second["band"], second["live"], second["fetched_at"]) == ("hit", False, first["fetched_at"])
 
 
+def test_a_full_outage_replays_the_saved_result(world):
+    # At the venue the whole network can drop. The model's saved fields for the same
+    # question give the same query, so the saved yente response still matches.
+    state, routes, _ = world
+    state["results"] = [_candidate(0.97)]
+    first = pipeline.screen("Is Khawa Panga Mandro sanctioned?")
+    routes["openrouter.ai"] = FakeResponse(503)
+    routes["/match/sanctions"] = FakeResponse(503)
+    second = pipeline.screen("Is Khawa Panga Mandro sanctioned?")
+    assert (second["parsed"]["source"], second["parsed"]["name"]) == ("saved", "Khawa Panga Mandro")
+    assert second["parsed"]["fallback_reason"].startswith("HTTP 503")
+    assert (second["band"], second["live"], second["fetched_at"]) == ("hit", False, first["fetched_at"])
+
+
 def test_a_review_with_no_matcher_candidate_gets_a_fixed_report(world):
     state, _, calls = world
     state["name"] = "KHAWA PANGA MANDRO"  # the UN list has it; the matcher returns nothing

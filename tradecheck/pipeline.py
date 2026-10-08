@@ -45,6 +45,13 @@ def screen(question: str) -> dict:
     except parse.NoParty as err:
         audit.log(screen_id, "input", {"question": question, "error": str(err), **model})
         raise
+    if query["source"] == "fallback":
+        # The model is down. If this exact question was asked before, reuse the fields the
+        # model gave then: the query matches again, so a saved yente response can replay
+        # even when the whole network is down.
+        saved = audit.saved_extraction(question)
+        if saved:
+            query = {**saved, "source": "saved", "fallback_reason": query["fallback_reason"]}
     audit.log(screen_id, "input", {"question": question, "parsed": query, "source": query["source"], **model})
 
     try:
