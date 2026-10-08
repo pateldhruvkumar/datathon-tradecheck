@@ -53,7 +53,7 @@ Honestly, the valuable part isn't the code, it's the data pipeline. A daily-refr
 
 | Source | What it gives | Access | Licence / terms | Status |
 | --- | --- | --- | --- | --- |
-| OpenSanctions | Consolidated dataset from dozens of official lists — US, EU, UK, UN, **Canada (SEMA)**, plus PEPs and debarment; bulk CSV/JSON, updated daily | Free bulk download, no key | **CC-BY-NC 4.0 — free for non-commercial use** (fits the datathon; commercial use needs a paid licence) | To ingest in Build Session 2 |
+| OpenSanctions | Consolidated dataset from dozens of official lists — US, EU, UK, UN, **Canada (SEMA)**, plus PEPs and debarment; bulk CSV/JSON, updated daily | Hosted matcher API (team key); bulk download is free | **CC-BY-NC 4.0 — free for non-commercial use** (fits the datathon; commercial use needs a paid licence) | Layer 1 since Build Session 3, through the hosted matcher (yente) |
 | UN Security Council Consolidated List | Direct source pull | Free XML | Public government data | ✅ Verified live pull Oct 3, 2026 — 5,285-line XML |
 | Reference pattern | `gsmiguel/sanctions_lists_etl`: 4-list (OFAC/EU/UN/UK) ETL running daily via GitHub Actions | Open source | — | Proves the pipeline pattern is feasible |
 
@@ -93,7 +93,7 @@ Honestly, the valuable part isn't the code, it's the data pipeline. A daily-refr
 
 **After Demo Day:** extend the same pattern to tariffs/duties by product code and firm-registry checks. One place for "can I trade X with country Y?" The world-map explorer idea, but grounded in official data.
 
-## Demo script (3 cases, each live in under 5 seconds)
+## Demo script (3 cases, live)
 
 1. **Clear** — "AgroDistribuidora del Bajío SA de CV" (fictional Mexican buyer): no hits across all lists → Clear\*, with "checked at" timestamp and the lists screened.
 2. **Caution** — "Chief Kahwa": matches a *Low-quality* alias of KHAWA PANGA MANDRO (UN list) → Caution: weak-alias hit flagged for human review, with the alias-quality evidence shown.
@@ -118,39 +118,31 @@ The three cases walk the full verdict taxonomy on real data.
 - Build Session 1 checklist: https://github.com/TrilemmaFoundation/Datathon-Season-2026/blob/main/build%20session%20checklist/build-session-1.md
 - Pipeline pattern reference (4-list ETL, daily): https://github.com/gsmiguel/sanctions\_lists\_etl/blob/HEAD/README.md
 
-## Build Session 2 plan
+## How it works (Build Session 3)
 
-**Demo scope (decided Oct 7):** narrowed to **US + Canada** — the legal must (Canada/SEMA)
-plus the dominant trade corridor (US/OFAC). Pulling **direct from the two government sources**
-(not OpenSanctions) removes the CC-BY-NC commercial-licence risk and strengthens provenance.
-See [`RUN.md`](RUN.md) for commands.
+**Decided Oct 8:** the team's workflow diagram ("How a question moves through TradeCheck") is the plan. It replaces the Oct 7 US + Canada direct-pull pipeline. One call to the hosted OpenSanctions matcher covers the US, Canada, EU, UK and UN lists, and our own copy of the UN list cross-checks it. OpenSanctions data is CC BY-NC 4.0: fine for the datathon, and a paid licence is needed before any commercial use. Design: [the spec](docs/superpowers/specs/2026-10-08-tradecheck-architecture-design.md). Commands: [`RUN.md`](RUN.md).
 
 ```
-OFAC SDN + Consolidated (XML) ─┐
-Canada SEMA/JVCFOA (XML) ───────┼─► normalize ─► DuckDB ─► rapidfuzz match ─► verdict + evidence ─► single-page UI
+question ─► model extracts the party ─► Layer 1: OpenSanctions match + UN cross-check
+         ─► Layer 2: bands (clear < 0.70 ≤ review < 0.90 ≤ hit; failed check = Unknown)
+         ─► Layer 3, review and hit only: full record + news + model report, citations checked in code
+         ─► review: analyst queue, then reviewed · hit: flagged · every step: append-only audit log
 ```
 
-- [x] Ingest the two lists directly from source (DuckDB); provenance (`fetched_at`, SHA-256) in `manifest.json`
-- [x] Normalization schema: name, aliases + quality, DOB, nationality, IDs, source list, program, listed date, `fetched_at` on every field
-- [x] Matching pipeline (rapidfuzz) with transparent per-hit confidence scores
-- [x] Single search UI: per-hit evidence, source links, verdict, "checked at" timestamp
-- [ ] 3 scripted demo cases (clear / caution / avoid) on **live** data — logic validated offline via fixtures; pending first live fetch
-- [x] "Not legal advice" disclaimer on every result
+- **The matcher decides; the model explains.** Model output never changes a score, band, label or status.
+- **Missing data is never clear.** A failed match check is Unknown. An unavailable UN check or a failed extraction blocks Clear\*.
+- **Every claim cites evidence**, and code checks each citation before the report is shown.
+- **The audit log is append-only**, enforced by database triggers.
 
-**Stack (all free):** Python, DuckDB, FastAPI, rapidfuzz, one static HTML page.
-
-**Open questions (to settle in Build Session 2):**
-
-- DuckDB vs SQLite for the local store. Leaning DuckDB, will decide while spiking.
-- The 90 fuzzy-match threshold is a starting guess, not a tested number. Tune on the test set.
-- Who owns what: TODO (team to fill in).
+**Stack:** Python, FastAPI, SQLite, rapidfuzz and one static HTML page, with OpenSanctions (hosted yente), OpenRouter (`qwen/qwen3.8-27b`) and Tavily.
 
 ### Open risks
 
-- **Licence:** OpenSanctions bulk is non-commercial — fine for the datathon, must switch to a paid licence before any commercial use.
-- **Attribution:** CC-BY-NC requires crediting OpenSanctions — attribution goes in the UI footer and the repo.
-- **False confidence:** transliteration and common names cause false positives — measured on the test set, not hand-waved.
-- **Staleness:** lists update on different cadences; every field shows `fetched_at`.
+- **Licence:** OpenSanctions data is non-commercial (CC BY-NC 4.0). Commercial use needs a paid licence.
+- **Attribution:** CC BY-NC requires crediting OpenSanctions. The credit is in the UI footer and this README.
+- **Placeholder cutoffs:** 0.70 and 0.90 are starting points, not tested numbers. Tune them on a labelled test set.
+- **Third parties see the names:** counterparty names go to OpenSanctions, OpenRouter and Tavily. That's fine for the demo; disclose it before real users.
+- **Staleness:** OpenSanctions refreshes four times a day, and our UN copy is fetched by hand. The UN cross-check flags the gap instead of hiding it.
 
 ## Team
 
@@ -159,6 +151,4 @@ Canada SEMA/JVCFOA (XML) ───────┼─► normalize ─► DuckDB 
 
 ## Repo status
 
-Build Session 1 (Oct 5): framing + this README. Build Session 2 (Oct 7): working ingestion and search —
-US + Canada direct-pull pipeline (OFAC SDN/Consolidated + Canada SEMA/JVCFOA) → DuckDB → rapidfuzz
-screening → FastAPI single-page UI. End-to-end tested offline (`pytest`, 11 passing). See [`RUN.md`](RUN.md).
+Build Session 1 (Oct 5): framing and this README. Build Session 2 (Oct 7): a US + Canada direct-pull pipeline, since replaced. Build Session 3 (Oct 9): the three-layer flow above, with an OpenSanctions match plus UN cross-check, score bands, cited model reports, a review queue and an append-only audit log, tested offline with `python -m pytest`. See [`RUN.md`](RUN.md).
