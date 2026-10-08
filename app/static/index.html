@@ -28,21 +28,26 @@
       margin: 0; background: var(--bg); color: var(--ink);
       font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
     h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.3px; }
     .tagline { color: var(--muted); margin: 0 0 24px; font-size: 15px; }
-    form { display: flex; gap: 8px; margin-bottom: 8px; }
-    input[type=text] {
-      flex: 1; padding: 12px 14px; font-size: 16px; border: 1px solid var(--border);
+    form#f { display: flex; gap: 8px; margin-bottom: 8px; }
+    input[type=text], textarea {
+      width: 100%; padding: 12px 14px; font: inherit; border: 1px solid var(--border);
       border-radius: 10px; background: var(--card); color: var(--ink);
     }
-    input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    form#f input { flex: 1; }
+    input[type=text]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
     button {
       padding: 12px 18px; font-size: 16px; font-weight: 600; border: 0; cursor: pointer;
       border-radius: 10px; background: var(--accent); color: #fff;
     }
+    button.secondary { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
     button:disabled { opacity: .6; cursor: default; }
-    .hint { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+    a { color: var(--accent); }
+    .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .note { color: var(--caution-ink); font-size: 13px; }
+    .err { color: var(--avoid-ink); }
     .verdict {
       border-radius: 14px; padding: 18px 18px 18px 22px; margin: 20px 0 16px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
@@ -58,107 +63,215 @@
     .verdict.clear h2 { color: var(--clear-ink); }
     .verdict.unknown h2 { color: var(--unknown-ink); }
     .verdict p { margin: 4px 0 0; font-size: 14px; }
-    .hit {
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px 16px; margin: 10px 0;
-    }
-    .hit .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .hit .name { font-weight: 600; }
-    .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
-    .hit dl { display: grid; grid-template-columns: 130px 1fr; gap: 2px 12px; margin: 10px 0 0; font-size: 14px; }
-    .hit dt { color: var(--muted); } .hit dd { margin: 0; }
-    .hit a { color: var(--accent); }
+    .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); vertical-align: middle; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+    .card h3 { margin: 0 0 8px; font-size: 16px; }
+    .card h4 { margin: 12px 0 4px; font-size: 14px; }
+    dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 2px 12px; margin: 0; font-size: 14px; }
+    dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+    .claims { margin: 0; padding-left: 20px; font-size: 14px; }
+    .cite { font-size: 12px; text-decoration: none; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .queue { list-style: none; padding: 0; margin: 0; }
+    .queue li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+    .queue button { padding: 6px 12px; font-size: 14px; }
+    #rv p { margin: 0 0 8px; }
     .meta { color: var(--muted); font-size: 13px; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; }
     .meta code { font-size: 12px; }
     footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
-    .err { color: var(--avoid-ink); }
+    @media (max-width: 640px) {
+      .grid2 { grid-template-columns: 1fr; }
+      dl.kv { grid-template-columns: 110px 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>TradeCheck</h1>
-    <p class="tagline">Free US&nbsp;+&nbsp;Canada sanctions screening &mdash; with the source and date behind every answer.</p>
+    <p class="tagline">Sanctions screening across the US, Canada, EU, UK and UN lists &mdash; with the source and date behind every answer.</p>
 
     <form id="f">
-      <input id="q" type="text" placeholder="Enter a person or company name&hellip;" autocomplete="off" autofocus />
+      <input id="q" type="text" placeholder="e.g. Can we ship to Northwind Metals FZE in Dubai?" autocomplete="off" autofocus />
       <button id="go" type="submit">Screen</button>
     </form>
-    <p class="hint">Screens the U.S. OFAC lists and Canada&rsquo;s autonomous (SEMA/JVCFOA) list. A clean result is never a guarantee &mdash; missing data shows as <em>Unknown</em>, never green.</p>
+    <p class="hint">The matcher decides; the model only explains. Missing data shows as <em>Unknown</em>, never green.</p>
 
     <div id="out" aria-live="polite"></div>
 
-    <footer>
-      Sources: U.S. Treasury OFAC &middot; Global Affairs Canada. Canada coverage is autonomous (SEMA/JVCFOA) only &mdash;
-      UN-mandated Canadian measures are enacted separately and are not yet included. Not legal advice.
-    </footer>
+    <section class="card" aria-labelledby="queue-title">
+      <h3 id="queue-title">Review queue</h3>
+      <div id="queue"><p class="hint">Loading&hellip;</p></div>
+      <div id="case"></div>
+    </section>
+
+    <footer>Sanctions data: OpenSanctions, CC BY-NC 4.0. Not legal advice.</footer>
   </div>
 
   <script>
-    const form = document.getElementById("f");
-    const out = document.getElementById("out");
-    const go = document.getElementById("go");
-    const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
-    const VERDICT = {
-      Avoid:   { cls: "avoid",   line: "Strong sanctions hit — do not proceed without review." },
-      Caution: { cls: "caution", line: "Possible hit flagged for human review." },
-      Clear:   { cls: "clear",   line: "No hits across the lists screened." },
-      Unknown: { cls: "unknown", line: "No data available — treat as Unknown, not clear." },
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+    // Only http(s) links become hrefs; anything else (javascript:, data:) goes nowhere.
+    const safeUrl = u => /^https?:\/\//i.test(String(u ?? "")) ? String(u) : "#";
+    const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${text}</a>`;
+    const num = n => typeof n === "number" ? n.toFixed(2) : "—";
+    const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
+    const CLASS = { "Avoid": "avoid", "Caution": "caution", "Clear*": "clear", "Unknown": "unknown" };
+    const LINE = {
+      hit: "Strong sanctions match.",
+      review: "Possible match, flagged for human review.",
+      clear: "No match across the lists checked.",
+      unknown: "The live check failed. Treat this as Unknown, not clear.",
     };
+    const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
+                      ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("q").value.trim();
-      if (!name) return;
-      go.disabled = true; out.innerHTML = "<p class='hint'>Screening&hellip;</p>";
-      try {
-        const r = await fetch("/screen", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        render(await r.json());
-      } catch (err) {
-        out.innerHTML = "<p class='err'>Error: " + esc(err.message) + "</p>";
-      } finally { go.disabled = false; }
-    });
+    async function api(path, body) {
+      const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+      const r = await fetch(path, opts);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const d = data.detail;
+        throw new Error(Array.isArray(d) ? d.map(x => `${(x.loc || []).slice(-1)[0]}: ${x.msg}`).join("; ") : (d || "HTTP " + r.status));
+      }
+      return data;
+    }
+
+    function claimsHtml(claims, sources) {
+      const index = Object.fromEntries(sources.map((s, i) => [s.key, i]));
+      return claims.map(c => `<li>${esc(c.text)}${(c.cites || []).map(key => {
+        const s = sources[index[key]];
+        return s ? ` <a class="cite" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" title="${esc(s.label)}">[${index[key] + 1}]</a>` : "";
+      }).join("")}</li>`).join("");
+    }
+
+    function reportHtml(rep) {
+      const sources = rep.sources || [];
+      let html = `<div class="card"><h3>Report</h3><ul class="claims">${claimsHtml([rep.summary], sources)}</ul>`;
+      for (const [key, title] of SECTIONS) {
+        const claims = (rep.sections || {})[key] || [];
+        if (key === "news" && (rep.steps || {}).news === "unavailable") {
+          html += `<h4>${title}</h4><p class="hint">News search unavailable.</p>`;
+        } else if (claims.length) {
+          html += `<h4>${title}</h4><ul class="claims">${claimsHtml(claims, sources)}</ul>`;
+        }
+      }
+      if (rep.next_step) html += `<p><strong>Next step:</strong> ${esc(rep.next_step)}</p>`;
+      if (rep.check === "template") {
+        html += `<p class="note">The model's report didn't pass its checks (${esc(rep.check_reason)}), so code wrote this report from the evidence.</p>`;
+      }
+      if (sources.length) {
+        html += `<h4>Sources</h4><ol class="claims">${sources.map(s => `<li>${link(s.url, esc(s.label))}</li>`).join("")}</ol>`;
+      }
+      return html + "</div>";
+    }
+
+    function fieldsHtml(p) {
+      const rows = [["Type", p.schema], ["Name", p.name], ["Country", p.country], ["Birth date", p.birth_date],
+                    ["Registration no.", p.registration_number]].filter(([, v]) => v);
+      let html = `<dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+      if (p.source === "fallback") {
+        html += `<p class="note">The fields could not be extracted (${esc(p.fallback_reason)}), so the whole question was screened as a name.</p>`;
+      }
+      return html;
+    }
 
     function render(res) {
-      const v = VERDICT[res.verdict] || VERDICT.Unknown;
-      let html = `<div class="verdict ${v.cls}">
-        <h2>${esc(res.verdict === "Clear" ? "Clear*" : res.verdict)}</h2>
-        <p>${esc(res.message || v.line)}</p></div>`;
-
-      for (const h of (res.hits || [])) {
-        const e = h.entity;
-        const ids = (e.ids || []).map(i => `${esc(i.type)}: ${esc(i.value)}${i.country ? " (" + esc(i.country) + ")" : ""}`).join("<br>");
-        html += `<div class="hit">
-          <div class="top">
-            <span class="name">${esc(e.primary_name)}</span>
-            <span class="badge">${esc(h.match_type)} · score ${esc(h.score)} · ${esc(h.quality || "name")}</span>
-          </div>
-          <dl>
-            <dt>Matched on</dt><dd>${esc(h.matched_name)}</dd>
-            <dt>List</dt><dd>${esc(e.source_list)} (${esc(e.entity_type)})</dd>
-            ${e.program ? `<dt>Program</dt><dd>${esc(e.program)}</dd>` : ""}
-            ${e.listed_date ? `<dt>Listed</dt><dd>${esc(e.listed_date)}</dd>` : ""}
-            ${(e.countries||[]).length ? `<dt>Country</dt><dd>${esc(e.countries.join(", "))}</dd>` : ""}
-            ${(e.dobs||[]).length ? `<dt>DOB</dt><dd>${esc(e.dobs.join("; "))}</dd>` : ""}
-            ${e.place_of_birth ? `<dt>Place of birth</dt><dd>${esc(e.place_of_birth)}</dd>` : ""}
-            ${ids ? `<dt>Identifiers</dt><dd>${ids}</dd>` : ""}
-            <dt>Source</dt><dd><a href="${esc(e.source_url)}" target="_blank" rel="noopener">${esc(e.source_list)} list</a></dd>
-            <dt>Fetched</dt><dd><code>${esc(e.fetched_at)}</code></dd>
-          </dl></div>`;
+      const un = res.un_check;
+      let html = `<div class="verdict ${CLASS[res.label] || "unknown"}">
+          <h2>${esc(res.label)}${res.status === "unknown" ? "" : ` <span class="badge">${esc(res.status.replace("_", " "))}</span>`}</h2>
+          <p>${esc(LINE[res.band])} Score: ${num(res.score)}.</p>
+          <p class="hint">${res.reasons.map(esc).join(" · ")}</p>
+        </div>`;
+      if (!res.live && res.fetched_at) {
+        html += `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>`;
       }
-
-      const lists = (res.lists_screened || [])
-        .map(l => `${esc(l.source_list)} <code>(${esc(l.fetched_at)})</code>`).join(" &middot; ") || "none loaded";
+      html += `<div class="card"><h3>What we screened</h3>${fieldsHtml(res.parsed)}</div>`;
+      if (res.candidates.length) {
+        html += `<div class="card"><h3>Matcher candidates</h3><ul class="claims">${res.candidates.map(c =>
+          `<li>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", esc(c.caption))} · score ${num(c.score)} · ${esc(c.datasets.join(", "))}</li>`).join("")}</ul></div>`;
+      }
+      html += `<div class="card"><h3>UN cross-check: ${esc(un.status)}</h3><p class="hint">${esc(cap(un.reason))}.${
+        un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p></div>`;
+      html += reportHtml(res.report);
       html += `<div class="meta">
-        Lists screened: ${lists}<br>
-        Checked at: <code>${esc(res.checked_at)}</code><br>
-        ${esc(res.disclaimer || "")}</div>`;
-      out.innerHTML = html;
+          Sanctions data as of <code>${esc(res.as_of || "unknown")}</code> · UN list from <code>${esc(un.list_date || "not loaded")}</code><br>
+          Checked at <code>${esc(res.checked_at)}</code> · <a href="/audit/${encodeURIComponent(res.screen_id)}" target="_blank" rel="noopener">View audit record</a><br>
+          ${esc(res.disclaimer)}</div>`;
+      $("out").innerHTML = html;
     }
+
+    async function loadQueue() {
+      try {
+        const items = await api("/queue");
+        $("queue").innerHTML = items.length
+          ? `<ul class="queue">${items.map(i => `<li><span>${esc(i.question)} · score ${num(i.score)}</span>
+               <button class="secondary" type="button" data-id="${esc(i.screen_id)}">Open</button></li>`).join("")}</ul>`
+          : `<p class="hint">No cases waiting for review.</p>`;
+      } catch (err) {
+        $("queue").innerHTML = `<p class="err">Couldn't load the queue: ${esc(err.message)}</p>`;
+      }
+    }
+
+    async function openCase(id) {
+      const ev = {};
+      for (const e of await api(`/audit/${encodeURIComponent(id)}`)) ev[e.step] = e.data;
+      const top = (ev.layer1.candidates || [])[0];
+      const topHtml = top
+        ? `<dl class="kv"><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
+             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Datasets</dt><dd>${esc(top.datasets.join(", "))}</dd></dl>`
+        : `<p class="hint">The matcher returned no candidate.</p>`;
+      $("case").innerHTML = `
+        <div class="grid2">
+          <div class="card"><h3>The query</h3>${fieldsHtml(ev.input.parsed)}</div>
+          <div class="card"><h3>Top candidate</h3>${topHtml}</div>
+        </div>
+        <p class="hint">In review because: ${ev.layer2.reasons.map(esc).join(" · ")}</p>
+        ${ev.layer3 ? reportHtml(ev.layer3) : ""}
+        <form id="rv" class="card">
+          <h3>Decision</h3>
+          <p><input id="reviewer" type="text" placeholder="Your name" required /></p>
+          <p><textarea id="note" rows="3" placeholder="Why? e.g. different date of birth" required></textarea></p>
+          <button type="submit" data-decision="confirm">Confirm match</button>
+          <button type="submit" class="secondary" data-decision="dismiss">Dismiss as false positive</button>
+          <p id="rvmsg" class="hint"></p>
+        </form>`;
+      $("rv").addEventListener("submit", async e => {
+        e.preventDefault();
+        try {
+          const res = await api(`/review/${encodeURIComponent(id)}`, {
+            decision: e.submitter.dataset.decision, note: $("note").value, reviewer: $("reviewer").value,
+          });
+          $("case").innerHTML = `<p class="hint">Recorded: ${esc(res.decision)}, status ${esc(res.status)}.
+            <a href="/audit/${encodeURIComponent(id)}" target="_blank" rel="noopener">View audit record</a></p>`;
+          loadQueue();
+        } catch (err) {
+          $("rvmsg").innerHTML = `<span class="err">${esc(err.message)}</span>`;
+        }
+      });
+    }
+
+    $("queue").addEventListener("click", e => {
+      const id = e.target.dataset && e.target.dataset.id;
+      if (id) openCase(id).catch(err => { $("case").innerHTML = `<p class="err">${esc(err.message)}</p>`; });
+    });
+
+    $("f").addEventListener("submit", async e => {
+      e.preventDefault();
+      const question = $("q").value.trim();
+      if (!question) return;
+      $("go").disabled = true;
+      $("out").innerHTML = "<p class='hint'>Screening&hellip; a review or hit case can take up to a minute while the report is written.</p>";
+      try {
+        render(await api("/screen", { question }));
+        loadQueue();
+      } catch (err) {
+        $("out").innerHTML = `<p class="err">Error: ${esc(err.message)}</p>`;
+      } finally {
+        $("go").disabled = false;
+      }
+    });
+
+    loadQueue();
   </script>
 </body>
 </html>
