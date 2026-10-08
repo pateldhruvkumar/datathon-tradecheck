@@ -156,6 +156,9 @@
         }
       }
       if (rep.next_step) html += `<p><strong>Next step:</strong> ${esc(rep.next_step)}</p>`;
+      if (rep.check === "error") {
+        html += `<p class="note">Building the report failed (${esc(rep.check_reason)}). The result above still stands.</p>`;
+      }
       if (rep.check === "template") {
         html += `<p class="note">The model's report didn't pass its checks (${esc(rep.check_reason)}), so code wrote this report from the evidence.</p>`;
       }

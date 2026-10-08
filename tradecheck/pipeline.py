@@ -73,7 +73,10 @@ def screen(question: str) -> dict:
     audit.log(screen_id, "layer2", band)
 
     if band["band"] in ("review", "hit") and candidates:
-        report = layer3.report(query, match, un, band)
+        try:
+            report = layer3.report(query, match, un, band)
+        except Exception as err:  # the report explains the decision; a bug in it must not hide it
+            report = _error_report(band, err)
         audit.log(screen_id, "layer3", report)
     else:
         report = _fixed_report(band, error)
@@ -118,6 +121,15 @@ def _fixed_report(band: dict, error: str | None) -> dict:
     return {"summary": summary, "sections": {section: [] for section in layer3.SECTIONS}, "sources": sources,
             "next_step": layer3.NEXT_STEP.get(name), "check": "fixed", "check_reason": None,
             "attempts": 0, "steps": {}}
+
+
+def _error_report(band: dict, err: Exception) -> dict:
+    """The report when Layer 3 itself fails: the band stands, and the error is named."""
+    return {"summary": {"text": "The evidence report could not be built, so only the matcher's result "
+                                "is shown.", "cites": []},
+            "sections": {section: [] for section in layer3.SECTIONS}, "sources": [],
+            "next_step": layer3.NEXT_STEP[band["band"]], "check": "error",
+            "check_reason": f"{type(err).__name__}: {err}", "attempts": 0, "steps": {}}
 
 
 def main(argv: list[str] | None = None) -> int:

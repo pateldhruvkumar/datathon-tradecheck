@@ -247,6 +247,8 @@ The pipeline also builds fixed reports, with `check: "fixed"` and no model call,
 - **unknown:** "Live check failed: <reason>. Not clear. Retry."
 - **review with no matcher candidate**, raised by the UN check or a fallback extraction: the band's reasons, with the review next step. There is no candidate for Layer 3 to explain.
 
+If Layer 3 itself raises an unexpected error, the pipeline keeps the band and returns a report with `check: "error"` that names the error. The report explains the decision; a bug in it must not hide the decision.
+
 ### 5.6 `POST /screen` response
 
 ```json

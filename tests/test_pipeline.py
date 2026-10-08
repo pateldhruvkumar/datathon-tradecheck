@@ -129,6 +129,22 @@ def test_a_review_with_no_matcher_candidate_gets_a_fixed_report(world):
     assert [i["screen_id"] for i in audit.queue()] == [res["screen_id"]]
 
 
+def test_a_layer3_error_keeps_the_band(world, monkeypatch):
+    # The report explains the decision; a bug in it must not hide the decision.
+    state, _, _ = world
+    state["results"] = [_candidate(0.97)]
+
+    def broken(*args):
+        raise KeyError("caption")
+
+    monkeypatch.setattr(pipeline.layer3, "report", broken)
+    res = pipeline.screen("Is Khawa Panga Mandro sanctioned?")
+    assert (res["band"], res["label"], res["status"]) == ("hit", "Avoid", "flagged")
+    assert (res["report"]["check"], res["report"]["check_reason"]) == ("error", "KeyError: 'caption'")
+    assert res["report"]["next_step"] == "Hold and escalate. Don't proceed until reviewed."
+    assert _steps(res) == ["input", "layer1", "layer2", "layer3", "final"]
+
+
 def test_a_fallback_extraction_is_not_clear(world):
     _, routes, _ = world
     routes["openrouter.ai"] = FakeResponse(503)
