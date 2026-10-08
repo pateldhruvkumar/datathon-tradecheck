@@ -123,6 +123,11 @@ def _fixed_report(band: dict, error: str | None) -> dict:
 def main(argv: list[str] | None = None) -> int:
     from dotenv import load_dotenv  # comes with uvicorn[standard]
 
+    for stream in (sys.stdout, sys.stderr):
+        # Windows gives Python a cp1252 stream when output isn't an interactive console
+        # (Git Bash, a pipe), and listed names and aliases are often Cyrillic or Arabic.
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="Screen questions through every TradeCheck layer.")
     ap.add_argument("questions", nargs="+", help="free-text questions or bare names")
     ap.add_argument("--full", action="store_true", help="print each whole result as JSON")

@@ -1,7 +1,9 @@
 """End to end with every outside service faked: each band, the saved-result fallback,
 and the audit events each screen writes."""
 
+import io
 import sqlite3
+import sys
 from pathlib import Path
 
 import pytest
@@ -143,3 +145,19 @@ def test_no_party_logs_the_input_and_raises(world):
     rows = con.execute("SELECT step, json_extract(data, '$.error') FROM events").fetchall()
     con.close()
     assert rows == [("input", "No party name found in the question")]
+
+
+def test_the_command_line_prints_non_latin_names_on_a_windows_console(world, monkeypatch):
+    # Windows gives Python a cp1252 stdout when output isn't an interactive console
+    # (Git Bash, a pipe), and listed names and aliases are often Cyrillic or Arabic.
+    state, _, _ = world
+    state["name"], state["results"] = "Хава Панга Мандро", [_candidate(0.97)]
+    start = pipeline.start
+    monkeypatch.setattr(pipeline, "start", lambda: start(FIXTURE))
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *args, **kwargs: None)
+    out = io.BytesIO()
+    monkeypatch.setattr(sys, "stdout", io.TextIOWrapper(out, encoding="cp1252"))
+    monkeypatch.setattr(sys, "stderr", io.TextIOWrapper(io.BytesIO(), encoding="cp1252"))
+    assert pipeline.main(["--full", "Is Хава Панга Мандро sanctioned?"]) == 0
+    sys.stdout.flush()
+    assert "Хава Панга Мандро" in out.getvalue().decode("utf-8")
