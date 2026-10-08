@@ -233,19 +233,21 @@
         </div>
         <p class="hint">In review because: ${ev.layer2.reasons.map(esc).join(" · ")}</p>
         ${ev.layer3 ? reportHtml(ev.layer3) : ""}
-        <form id="rv" class="card">
+        <div id="rv" class="card">
           <h3>Decision</h3>
-          <p><input id="reviewer" type="text" placeholder="Your name" required /></p>
-          <p><textarea id="note" rows="3" placeholder="Why? e.g. different date of birth" required></textarea></p>
-          <button type="submit" data-decision="confirm">Confirm match</button>
-          <button type="submit" class="secondary" data-decision="dismiss">Dismiss as false positive</button>
+          <p><input id="reviewer" type="text" placeholder="Your name" /></p>
+          <p><textarea id="note" rows="3" placeholder="Why? e.g. different date of birth"></textarea></p>
+          <button type="button" data-decision="confirm">Confirm match</button>
+          <button type="button" class="secondary" data-decision="dismiss">Dismiss as false positive</button>
           <p id="rvmsg" class="hint"></p>
-        </form>`;
-      $("rv").addEventListener("submit", async e => {
-        e.preventDefault();
+        </div>`;
+      // Plain buttons, not a form: Enter in a field must never submit an irreversible decision.
+      $("rv").addEventListener("click", async e => {
+        const decision = e.target.dataset && e.target.dataset.decision;
+        if (!decision) return;
         try {
           const res = await api(`/review/${encodeURIComponent(id)}`, {
-            decision: e.submitter.dataset.decision, note: $("note").value, reviewer: $("reviewer").value,
+            decision, note: $("note").value, reviewer: $("reviewer").value,
           });
           $("case").innerHTML = `<p class="hint">Recorded: ${esc(res.decision)}, status ${esc(res.status)}.
             <a href="/audit/${encodeURIComponent(id)}" target="_blank" rel="noopener">View audit record</a></p>`;

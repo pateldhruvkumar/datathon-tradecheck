@@ -332,7 +332,7 @@ One page with no framework, following the existing page's pattern of escaping al
   - the label and status stamp, the extracted fields (with a note when the fallback was used) and the score
   - the report sections; each citation links to `https://www.opensanctions.org/entities/<id>/` for the candidate, to the official source URL for a sanction entry (or the candidate's page when it has none), to the article URL for news, and to the UN list for the UN record
   - the next step, sources, as-of date, checked-at time, disclaimer and a "View audit record" link
-- **Review queue panel:** lists pending cases. Opening one shows the query and the top candidate side by side with the report, plus Confirm and Dismiss buttons, a note field and a reviewer-name field.
+- **Review queue panel:** lists pending cases. Opening one shows the query and the top candidate side by side with the report, plus Confirm and Dismiss buttons, a note field and a reviewer-name field. The buttons are plain buttons, not a form, so pressing Enter in a field never submits the irreversible decision.
 - **Footer:** "Sanctions data: OpenSanctions, CC BY-NC 4.0. Not legal advice."
 
 ## 8. Errors, retries and keys
