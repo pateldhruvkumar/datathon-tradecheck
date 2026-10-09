@@ -243,9 +243,11 @@ The returned report adds fields the model never writes: `sources` (every cited i
 
 The pipeline also builds fixed reports, with `check: "fixed"` and no model call, for the cases Layer 3 doesn't run on:
 
-- **clear:** no candidate reached 0.70 in the `sanctions` collection (US, Canada, EU, UK, UN and more) as of the data date, and the UN check agrees.
+- **clear:** no candidate reached 0.70 in the `sanctions` collection (US, Canada, EU, UK, UN and more) as of the data date, and the UN check agrees. A result replayed from a saved response says "as of the saved result from <fetched_at>" instead, because the data date read at startup would claim a newer check.
 - **unknown:** "Live check failed: <reason>. Not clear. Retry."
 - **review with no matcher candidate**, raised by the UN check or a fallback extraction: the band's reasons, with the review next step. There is no candidate for Layer 3 to explain.
+
+Fixed reports are logged as the `layer3` event too, so the audit record and the review queue always show the report the user saw.
 
 If Layer 3 itself raises an unexpected error, the pipeline keeps the band and returns a report with `check: "error"` that names the error. The report explains the decision; a bug in it must not hide the decision.
 
@@ -270,7 +272,7 @@ If Layer 3 itself raises an unexpected error, the pipeline keeps the band and re
 
 `report.summary` is the summary claim, and `report.sections` holds the five claim lists keyed by name (`who_matched`, `why_it_matched`, `differences`, `sanctions`, `news`).
 
-When `live` is false, the UI shows "Live check failed; showing the saved result from <fetched_at>".
+When `live` is false, the UI shows "Live check failed; showing the saved result from <fetched_at>", and `as_of` is null: the data date read at startup doesn't describe a saved result, and an Unknown result used no data. With no `as_of`, the UI shows only the "checked at" time (section 5.2).
 
 ## 6. Audit log and review queue
 
@@ -302,14 +304,14 @@ What each step's event holds (the diagram's audit column):
 | input | question, parsed fields, `source`, model ID, prompt version |
 | layer1 | collection, algorithm, threshold, candidates (id, caption, score, datasets), `live`, `fetched_at`, UN result |
 | layer2 | band, cutoffs, reasons |
-| layer3 | steps run, sources, model ID, prompt version, seed, attempts, check result, report |
+| layer3 | steps run, sources, model ID, prompt version, seed, attempts, check result, report; or the fixed report (`check: "fixed"`) when Layer 3 doesn't run |
 | review | reviewer, decision (`confirm` or `dismiss`), note |
 | final | status, timestamp |
 
 Functions: `log(screen_id, step, data)`, `record(screen_id)`, `queue()`, `review(screen_id, decision, note, reviewer)`, plus the cache read/write used by `layer1_yente`.
 
 - The diagram's "one row per screen" is `GET /audit/{screen_id}`, which returns that screen's events in order.
-- Every screen ends with a `final` event. A review adds a second `final` event; the latest `final` event is the current status, so nothing is ever overwritten.
+- Every screen ends with a `final` event, including a question with no party (status `not_screened`). A review adds a second `final` event; the latest `final` event is the current status, so nothing is ever overwritten.
 - **Review queue:** screens whose `layer2` event has band `review` and that have no `review` event yet. This is one SQL query using `json_extract`, with no extra table.
 - **`POST /review/{id}`** takes `{"decision": "confirm" | "dismiss", "note": "...", "reviewer": "..."}`. The note and reviewer are required. It writes a `review` event and a `final` event with status `reviewed`, and the decision says whether the match was confirmed (escalate) or dismissed (false positive). The partial unique index `one_review_per_screen` allows one review per screen, so two reviewers at once can't both succeed.
 

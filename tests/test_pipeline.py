@@ -84,7 +84,24 @@ def test_clear_makes_no_report_call(world):
     assert _report_calls(calls) == []
     assert (res["report"]["check"], res["report"]["summary"]["cites"]) == ("fixed", ["sanctions", "UN"])
     assert "as of 2026-10-08T06:00:00" in res["report"]["summary"]["text"]
-    assert _steps(res) == ["input", "layer1", "layer2", "final"]
+    # The fixed report is logged too, so the audit record holds the text the user saw.
+    assert _steps(res) == ["input", "layer1", "layer2", "layer3", "final"]
+    assert audit.record(res["screen_id"])[3]["data"] == res["report"]
+
+
+def test_a_replayed_clear_is_dated_by_its_saved_result(world, monkeypatch):
+    # The data date read at startup describes the live collection. A result replayed from
+    # the cache is only as recent as the saved answer, so it must not claim the newer date.
+    state, routes, _ = world
+    state["name"] = "AgroDistribuidora del Bajío SA de CV"
+    monkeypatch.setattr(audit, "now", lambda: "2026-10-08T20:00:00+00:00")
+    pipeline.screen("Can we ship to AgroDistribuidora del Bajío SA de CV in Mexico?")
+    routes["/match/sanctions"] = FakeResponse(503)
+    res = pipeline.screen("Can we ship to AgroDistribuidora del Bajío SA de CV in Mexico?")
+    assert (res["band"], res["live"], res["as_of"]) == ("clear", False, None)
+    assert res["report"]["summary"]["text"] == (
+        "No candidate reached 0.70 in the OpenSanctions sanctions collection (US, Canada, EU, UK, "
+        "UN and more) as of the saved result from 2026-10-08T20:00:00+00:00, and the UN check agrees.")
 
 
 def test_unknown_when_yente_is_down_and_nothing_is_saved(world):
@@ -95,6 +112,7 @@ def test_unknown_when_yente_is_down_and_nothing_is_saved(world):
     assert res["report"]["summary"]["text"] == "Live check failed: OpenSanctions answered HTTP 503. Not clear. Retry."
     assert _report_calls(calls) == []
     assert audit.record(res["screen_id"])[1]["data"]["error"] == "OpenSanctions answered HTTP 503"
+    assert (res["as_of"], _steps(res)) == (None, ["input", "layer1", "layer2", "layer3", "final"])
 
 
 def test_the_saved_result_is_used_when_yente_goes_down(world):
@@ -127,6 +145,8 @@ def test_a_review_with_no_matcher_candidate_gets_a_fixed_report(world):
     assert (res["band"], res["un_check"]["status"]) == ("review", "disagree")
     assert (res["report"]["check"], _report_calls(calls)) == ("fixed", [])
     assert [i["screen_id"] for i in audit.queue()] == [res["screen_id"]]
+    # Opening the case from the queue reads the report from the audit record.
+    assert [e["data"] for e in audit.record(res["screen_id"]) if e["step"] == "layer3"] == [res["report"]]
 
 
 def test_a_layer3_error_keeps_the_band(world, monkeypatch):
@@ -152,15 +172,16 @@ def test_a_fallback_extraction_is_not_clear(world):
     assert (res["parsed"]["source"], res["band"]) == ("fallback", "review")
 
 
-def test_no_party_logs_the_input_and_raises(world):
+def test_no_party_still_closes_the_record_and_raises(world):
+    # Every screen ends with a final event, even one with nothing to screen.
     state, _, _ = world
     state["name"] = None
     with pytest.raises(parse.NoParty):
         pipeline.screen("What are the export rules for Mexico?")
     con = sqlite3.connect(audit.DB_PATH)
-    rows = con.execute("SELECT step, json_extract(data, '$.error') FROM events").fetchall()
+    rows = con.execute("SELECT step, json_extract(data, '$.error'), json_extract(data, '$.status') FROM events").fetchall()
     con.close()
-    assert rows == [("input", "No party name found in the question")]
+    assert rows == [("input", "No party name found in the question", None), ("final", None, "not_screened")]
 
 
 def test_the_command_line_prints_non_latin_names_on_a_windows_console(world, monkeypatch):

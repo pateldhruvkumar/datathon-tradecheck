@@ -47,6 +47,8 @@ def screen(question: str) -> dict:
         query = parse.extract(question)
     except parse.NoParty as err:
         audit.log(screen_id, "input", {"question": question, "error": str(err), **model})
+        # Nothing to screen, but the record still ends with a final event like every other.
+        audit.log(screen_id, "final", {"status": "not_screened"})
         raise
     if query["source"] == "fallback":
         # The model is down. If this exact question was asked before, reuse the fields the
@@ -86,9 +88,11 @@ def screen(question: str) -> dict:
             report = layer3.report(query, match, un, band)
         except Exception as err:  # the report explains the decision; a bug in it must not hide it
             report = _error_report(band, err)
-        audit.log(screen_id, "layer3", report)
     else:
-        report = _fixed_report(band, error)
+        report = _fixed_report(band, match, error)
+    # Fixed reports are logged too, so the audit record (and the queue view built from it)
+    # always holds the report the user saw. check: "fixed" marks the ones with no model call.
+    audit.log(screen_id, "layer3", report)
 
     status = layer2.STATUS[band["band"]]
     audit.log(screen_id, "final", {"status": status})
@@ -106,22 +110,29 @@ def screen(question: str) -> dict:
         "live": live,
         "fetched_at": fetched_at,
         "report": report,
-        "as_of": AS_OF,
+        # The startup data date only describes a live match. A replayed match is as old as its
+        # saved result (fetched_at), and an Unknown result used no sanctions data at all.
+        "as_of": AS_OF if live else None,
         "checked_at": checked_at,
         "disclaimer": DISCLAIMER,
     }
 
 
-def _fixed_report(band: dict, error: str | None) -> dict:
+def _fixed_report(band: dict, match: dict | None, error: str | None) -> dict:
     """The report when Layer 3 doesn't run: clear, unknown, or a review raised with no
-    matcher candidate to explain. No model call."""
+    matcher candidate to explain. No model call. ``match`` is None only for unknown."""
     name = band["band"]
     if name == "unknown":
         return _plain_report(f"Live check failed: {error}. Not clear. Retry.", [], None, "fixed")
     if name == "clear":
+        # A replayed result is only as recent as its saved answer; naming the data date read
+        # at startup would claim a newer check than really happened.
+        if match["live"]:
+            when = AS_OF or "the time checked"
+        else:
+            when = f"the saved result from {match['fetched_at']}"
         text = (f"No candidate reached {layer2.CLEAR_BELOW:.2f} in the OpenSanctions sanctions "
-                f"collection (US, Canada, EU, UK, UN and more) as of {AS_OF or 'the time checked'}, "
-                "and the UN check agrees.")
+                f"collection (US, Canada, EU, UK, UN and more) as of {when}, and the UN check agrees.")
     else:
         text = (f"No matcher candidate reached {layer2.CLEAR_BELOW:.2f}, but this needs review: "
                 + "; ".join(band["reasons"]) + ".")

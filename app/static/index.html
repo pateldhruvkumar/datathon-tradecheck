@@ -210,8 +210,11 @@
       html += `<div class="card"><h3>UN cross-check: ${esc(un.status)}</h3><p class="hint">${esc(cap(un.reason))}.${
         un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p></div>`;
       html += reportHtml(res.report);
+      // No data date (Unknown, a replayed result, or the catalog didn't say): show only the
+      // checked-at time rather than "as of unknown".
+      const asOf = res.as_of ? `Sanctions data as of <code>${esc(res.as_of)}</code> · ` : "";
       html += `<div class="meta">
-          Sanctions data as of <code>${esc(res.as_of || "unknown")}</code> · UN list from <code>${esc(un.list_date || "not loaded")}</code><br>
+          ${asOf}UN list from <code>${esc(un.list_date || "not loaded")}</code><br>
           Checked at <code>${esc(res.checked_at)}</code> · <a href="/audit/${encodeURIComponent(res.screen_id)}" target="_blank" rel="noopener">View audit record</a><br>
           ${esc(res.disclaimer)}</div>`;
       $("out").innerHTML = html;
