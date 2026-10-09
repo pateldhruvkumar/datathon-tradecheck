@@ -104,7 +104,7 @@ def test_a_good_report_on_the_first_attempt(services):
     assert rep["sections"]["sanctions"] == GOOD["sanctions"]
     assert rep["next_step"] == "Hold and escalate. Don't proceed until reviewed."
     assert [s["key"] for s in rep["sources"]] == ["NK-kpm", "ofac-s-1", "https://news.example/a", "UN:CDi.000"]
-    assert (rep["model"], rep["prompt_version"], rep["seed"]) == ("qwen/qwen3.8-27b", "report-v2", 42)
+    assert (rep["model"], rep["prompt_version"], rep["seed"]) == ("qwen/qwen3.8-27b", "report-v3", 42)
     assert rep["steps"] == {"entity": "ok", "news": "ok"}
 
 
@@ -163,7 +163,7 @@ def test_entity_failure_falls_back_to_the_match_properties(services):
     _model(services, chat_reply(BAD))
     rep = layer3.report(QUERY, MATCH, UN, {"band": "review", "score": 0.8})
     assert rep["steps"]["entity"] == "unavailable"
-    assert {"text": "Born: 1974-08-20.", "cites": ["NK-kpm"]} in rep["sections"]["who_matched"]
+    assert {"text": "Born: 1974-08-20; country: cd.", "cites": ["NK-kpm"]} in rep["sections"]["who_matched"]
     assert rep["next_step"] == "An analyst should compare the details and confirm or dismiss this match."
 
 
@@ -185,11 +185,19 @@ def test_the_template_always_passes_its_own_check(record, news):
 
 def test_template_content():
     t = layer3.template(QUERY, _bundle(), "NK-kpm")
-    assert [c["text"] for c in t["why_it_matched"]] == ["Matcher feature name_literal_match scored 1.00: exact name."]
-    assert [c["text"] for c in t["differences"]] == [
-        "Matcher penalty country_mismatch scored 1.00.",
-        "You gave country ug; the listing shows cd.",
+    assert t["summary"]["text"] == "Khawa Panga Mandro (Person) matched with score 0.95 and is on 2 lists."
+    assert [c["text"] for c in t["who_matched"]] == [
+        "Listed as Khawa Panga Mandro (Person), also known as Chief Kahwa.",
+        "Born: 1974-08-20; country: cd.",
     ]
+    # Plain words, and the UN record as its own line citing only the UN entry.
+    assert t["why_it_matched"] == [
+        {"text": "The name you gave is the same as a listed name, letter for letter.", "cites": ["NK-kpm"]},
+        {"text": "The UN Security Council list has KHAWA PANGA MANDRO as its main name under entry CDi.000, "
+                 "which the UN check scored 1.00 against the name you gave.", "cites": ["UN:CDi.000"]},
+    ]
+    # The country_mismatch penalty is left out: the country line already says it, with both values.
+    assert [c["text"] for c in t["differences"]] == ["You gave country ug; the listing shows cd."]
     assert t["sanctions"][0] == {"text": "DRCONGO by Office of Foreign Assets Control since 2005-11-01.",
                                  "cites": ["ofac-s-1"]}
     assert t["news"] == [{"text": "Militia leader named in report (2026-09-01).", "cites": ["https://news.example/a"]}]
@@ -199,5 +207,22 @@ def test_template_with_only_a_name():
     query = {**QUERY, "properties": {"name": ["Khawa Panga Mandro"]}}
     top = {**TOP, "explanations": {}}
     t = layer3.template(query, layer3.build_bundle(top, None, [], {"best": None}), "NK-kpm")
-    assert [c["text"] for c in t["differences"]] == ["Only a name was given, so no other details could be compared."]
+    assert [c["text"] for c in t["why_it_matched"]] == ["The name you gave was compared with the listed names of Khawa Panga Mandro."]
+    assert [c["text"] for c in t["differences"]] == [
+        "Only a name was given, so the listing's birth date and country could not be checked against it."]
     assert [c["text"] for c in t["sanctions"]] == ["Listed in: un_sc_sanctions, us_ofac_sdn."]
+
+
+def test_template_gives_every_identity_and_sanction_detail_the_record_has():
+    sanction = {"id": "eu-s-1", "properties": {
+        "program": ["COD"], "authority": ["EU Council"], "startDate": ["2005-11-01"],
+        "provisions": ["Asset freeze", "Travel ban"], "authorityId": ["EU.1234.56"],
+        "status": ["Active"], "reason": ["Former President of PUSIC."]}}
+    record = {**TOP, "properties": {**TOP["properties"], "birthPlace": ["Bunia"], "gender": ["male"],
+                                    "passportNumber": ["OB0123456"], "sanctions": [sanction]}}
+    t = layer3.template(QUERY, layer3.build_bundle(TOP, record, [], {"best": None}), "NK-kpm")
+    assert [c["text"] for c in t["who_matched"]][1:] == [
+        "Born: 1974-08-20; birthplace: Bunia; country: cd.", "Gender: male.", "Passport number: OB0123456."]
+    assert t["sanctions"] == [{"text": "COD by EU Council since 2005-11-01; measures: Asset freeze, Travel ban; "
+                                       "reference: EU.1234.56; status: Active; reason: Former President of PUSIC.",
+                               "cites": ["eu-s-1"]}]
