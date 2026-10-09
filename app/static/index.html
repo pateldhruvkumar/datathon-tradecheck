@@ -76,6 +76,12 @@
     .queue li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
     .queue button { padding: 6px 12px; font-size: 14px; }
     #rv p { margin: 0 0 8px; }
+    .candidate { margin: 0 0 10px; }
+    .candidate summary { cursor: pointer; font-size: 14px; }
+    table.lists { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 4px; }
+    table.lists th, table.lists td { text-align: left; padding: 4px 8px 4px 0; border-top: 1px solid var(--border); vertical-align: top; overflow-wrap: break-word; }
+    table.lists th { color: var(--muted); font-weight: 600; }
+    table.lists tr.group th { color: var(--ink); padding-top: 10px; border-top: 0; }
     .meta { color: var(--muted); font-size: 13px; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; }
     .meta code { font-size: 12px; }
     footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
@@ -128,6 +134,63 @@
     };
     const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
                       ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
+
+    // Plain names for the OpenSanctions dataset IDs a candidate is listed in, so a first-time
+    // user sees "United States · Treasury (OFAC)" instead of "us_ofac_sdn".
+    // [country or body, who publishes it, what the list is, group]
+    // ponytail: hand-written for the lists seen in the live check; an ID not here shows as is
+    // under "Other lists". If that happens often, read dataset titles from GET /catalog instead.
+    const DATASETS = {
+      un_sc_sanctions:         ["United Nations", "Security Council", "Consolidated sanctions list", "sanctions"],
+      us_ofac_sdn:             ["United States", "Treasury (OFAC)", "Specially Designated Nationals (SDN) list", "sanctions"],
+      us_ofac_cons:            ["United States", "Treasury (OFAC)", "Non-SDN consolidated sanctions list", "sanctions"],
+      ca_dfatd_sema_sanctions: ["Canada", "Global Affairs Canada", "Consolidated autonomous sanctions list", "sanctions"],
+      gb_fcdo_sanctions:       ["United Kingdom", "Foreign Office (FCDO)", "UK sanctions list", "sanctions"],
+      gb_hmt_sanctions:        ["United Kingdom", "Treasury (OFSI)", "Asset freeze targets", "sanctions"],
+      eu_fsf:                  ["European Union", "European Commission", "Financial sanctions (asset freezes)", "sanctions"],
+      eu_journal_sanctions:    ["European Union", "Official Journal", "Sanctions published in EU law", "sanctions"],
+      eu_travel_bans:          ["European Union", "EU Council", "Travel bans", "sanctions"],
+      fr_tresor_gels_avoir:    ["France", "Treasury (DG Trésor)", "National asset freeze register", "sanctions"],
+      be_fod_sanctions:        ["Belgium", "FPS Finance", "National financial sanctions list", "sanctions"],
+      ch_seco_sanctions:       ["Switzerland", "SECO", "Swiss sanctions list", "sanctions"],
+      mc_fund_freezes:         ["Monaco", "Budget and Treasury Department", "National fund freezes", "sanctions"],
+      jp_mof_sanctions:        ["Japan", "Ministry of Finance", "Economic sanctions (asset freezes)", "sanctions"],
+      au_dfat_sanctions:       ["Australia", "Foreign Affairs (DFAT)", "Consolidated sanctions list", "sanctions"],
+      za_fic_sanctions:        ["South Africa", "Financial Intelligence Centre", "Targeted financial sanctions list", "sanctions"],
+      ua_sfms_blacklist:       ["Ukraine", "Financial Monitoring Service", "Terrorism and international sanctions list", "sanctions"],
+      us_trade_csl:            ["United States", "Commerce, State and Treasury", "Consolidated Screening List (export checks)", "trade"],
+      us_sam_exclusions:       ["United States", "GSA (SAM.gov)", "Barred from federal contracts", "trade"],
+      tw_shtc:                 ["Taiwan", "Board of Foreign Trade", "High-tech export control list", "trade"],
+    };
+    const GROUPS = [["sanctions", "Sanctions lists"], ["trade", "Trade and contract screening lists"], ["other", "Other lists"]];
+
+    // A candidate's datasets as a table, sanctions first. Rows are sorted by country, with the
+    // UN first because other lists often copy it. Each list name links to its OpenSanctions
+    // page, where the user can see the source and when it was last updated.
+    function listsHtml(ids) {
+      const rows = ids.map(id => { const d = DATASETS[id]; return d ? [id, ...d] : [id, "—", "—", id, "other"]; })
+        .sort((a, b) => (b[0] === "un_sc_sanctions") - (a[0] === "un_sc_sanctions") || a[1].localeCompare(b[1]));
+      let html = `<table class="lists"><tr><th>Country or body</th><th>Who publishes it</th><th>List</th></tr>`;
+      for (const [group, title] of GROUPS) {
+        const inGroup = rows.filter(r => r[4] === group);
+        if (!inGroup.length) continue;
+        html += `<tr class="group"><th colspan="3">${title} (${inGroup.length})</th></tr>` + inGroup.map(([id, where, who, what]) =>
+          `<tr><td>${esc(where)}</td><td>${esc(who)}</td><td>${link("https://www.opensanctions.org/datasets/" + encodeURIComponent(id) + "/", what)}</td></tr>`).join("");
+      }
+      html += "</table>";
+      if (ids.includes("un_sc_sanctions") && ids.length > 1) {
+        html += `<p class="hint">Many countries copy UN listings into their own lists, so several rows can come from one UN decision.</p>`;
+      }
+      return html;
+    }
+
+    // One matcher candidate: name, score and how many lists, with the table behind a click.
+    // The top candidate starts open.
+    function candidateHtml(c, open) {
+      const n = c.datasets.length;
+      return `<details class="candidate"${open ? " open" : ""}><summary>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)}
+          · score ${num(c.score)} · on ${n} list${n === 1 ? "" : "s"}</summary>${n ? listsHtml(c.datasets) : ""}</details>`;
+    }
 
     // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
     // detail (a validation error lists each field), so callers can show it as is.
@@ -204,8 +267,7 @@
       }
       html += `<div class="card"><h3>What we screened</h3>${fieldsHtml(res.parsed)}</div>`;
       if (res.candidates.length) {
-        html += `<div class="card"><h3>Matcher candidates</h3><ul class="claims">${res.candidates.map(c =>
-          `<li>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)} · score ${num(c.score)} · ${esc(c.datasets.join(", "))}</li>`).join("")}</ul></div>`;
+        html += `<div class="card"><h3>Matcher candidates</h3>${res.candidates.map((c, i) => candidateHtml(c, i === 0)).join("")}</div>`;
       }
       html += `<div class="card"><h3>UN cross-check: ${esc(un.status)}</h3><p class="hint">${esc(cap(un.reason))}.${
         un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p></div>`;
@@ -241,7 +303,8 @@
       const top = (ev.layer1.candidates || [])[0];
       const topHtml = top
         ? `<dl class="kv"><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
-             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Datasets</dt><dd>${esc(top.datasets.join(", "))}</dd></dl>`
+             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Listed on</dt><dd>${top.datasets.length} list${top.datasets.length === 1 ? "" : "s"}</dd></dl>
+           ${top.datasets.length ? listsHtml(top.datasets) : ""}`
         : `<p class="hint">The matcher returned no candidate.</p>`;
       $("case").innerHTML = `
         <div class="grid2">
