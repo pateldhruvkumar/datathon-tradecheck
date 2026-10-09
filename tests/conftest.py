@@ -1,27 +1,53 @@
-"""Shared test fixtures: build a DuckDB store from the sample XML fixtures."""
+"""Shared fixtures. No test reaches the network or the real data folder."""
 
 from __future__ import annotations
 
-import itertools
-from pathlib import Path
-
 import pytest
+import requests
 
-from ingest.load import build
-from ingest.parse_canada import parse_canada
-from ingest.parse_ofac import parse_ofac
+from tradecheck import audit, http
 
-FIXTURES = Path(__file__).parent / "fixtures"
-TS = "2026-09-22T00:00:00+00:00"
+
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Fail any test that would open a real connection."""
+    def refuse(*args, **kwargs):
+        raise AssertionError("a test tried to reach the network")
+    monkeypatch.setattr(requests.Session, "request", refuse)
+
+
+@pytest.fixture(autouse=True)
+def fake_keys(monkeypatch):
+    """Test keys, so code that needs a key runs. They never leave the process."""
+    for name in ("OPENSANCTIONS_API_KEY", "OPENROUTER_API_KEY", "TAVILY_API_KEY"):
+        monkeypatch.setenv(name, "test-key")
 
 
 @pytest.fixture
-def db(tmp_path):
-    """A freshly built DuckDB store loaded from the OFAC + Canada fixtures."""
-    db_path = tmp_path / "test.duckdb"
-    records = itertools.chain(
-        parse_ofac(str(FIXTURES / "ofac_sdn_sample.xml"), "OFAC-SDN", TS),
-        parse_canada(str(FIXTURES / "canada_sema_sample.xml"), TS),
-    )
-    build(records, db_path)
-    return db_path
+def fake_http(monkeypatch):
+    """Replace http.request with a router. ``routes`` maps a URL fragment to a
+    FakeResponse, an exception to raise, or a function of the request's keyword
+    arguments that returns either. ``calls`` records (method, url, kwargs)."""
+    routes: dict = {}
+    calls: list = []
+
+    def fake_request(method, url, **kwargs):
+        calls.append((method, url, kwargs))
+        for fragment, answer in routes.items():
+            if fragment in url:
+                if callable(answer):
+                    answer = answer(kwargs)
+                if isinstance(answer, BaseException):
+                    raise answer
+                return answer
+        raise AssertionError(f"no fake route for {method} {url}")
+
+    monkeypatch.setattr(http, "request", fake_request)
+    return routes, calls
+
+
+@pytest.fixture(autouse=True)
+def db(tmp_path, monkeypatch):
+    """Each test gets its own empty audit database instead of data/tradecheck.sqlite."""
+    monkeypatch.setattr(audit, "DB_PATH", tmp_path / "tradecheck.sqlite")
+    audit.init()

@@ -1,1 +1,1 @@
-"""TradeCheck ingestion package: fetch, parse, normalize and load sanctions lists."""
+"""TradeCheck ingestion package: fetch the UN list and normalize names."""

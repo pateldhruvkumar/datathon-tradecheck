@@ -1,18 +1,21 @@
-"""Download the US (OFAC) and Canada (GAC) sanctions lists directly from source.
+"""Download the UN Security Council consolidated sanctions list directly from source.
+
+TradeCheck screens against the hosted OpenSanctions matcher; this file is the
+independent copy behind the UN cross-check (``tradecheck/layer1_un.py``).
 
 Writes raw files to ``data/raw/`` and a ``manifest.json`` recording the URL,
 ``fetched_at`` (ISO-8601 UTC), byte size and SHA-256 for every file -- the
 provenance the product promises ("source and date behind every answer").
 
-Both sources are free government data with no key and no licence restriction.
+The list is free government data with no key and no licence restriction.
 
 TLS is verified against the operating system's trust store when the optional
 ``truststore`` package is installed (it is in requirements.txt), so networks that
 inspect HTTPS with an IT-installed root certificate still verify. Verification is
 never disabled: a tampered list would defeat the point of screening.
 
-Run:  python -m ingest.fetch                 # all lists
-      python -m ingest.fetch --only ca_sema  # just Canada
+Run:  python -m ingest.fetch               # every source (today: just the UN list)
+      python -m ingest.fetch --only un_sc
 """
 
 from __future__ import annotations
@@ -30,20 +33,12 @@ import requests
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 MANIFEST = RAW_DIR / "manifest.json"
 
-# key -> (url, local filename). SDN + Canada are must-haves; CONS is optional.
+# key -> (url, local filename). The UN answers with a redirect to Azure blob
+# storage; requests follows it.
 SOURCES: dict[str, tuple[str, str]] = {
-    "us_sdn": (
-        "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML",
-        "ofac_sdn.xml",
-    ),
-    "us_cons": (
-        "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/CONSOLIDATED.XML",
-        "ofac_consolidated.xml",
-    ),
-    "ca_sema": (
-        "https://www.international.gc.ca/world-monde/assets/office_docs/"
-        "international_relations-relations_internationales/sanctions/sema-lmes.xml",
-        "canada_sema.xml",
+    "un_sc": (
+        "https://scsanctions.un.org/resources/xml/en/consolidated.xml",
+        "un_sc.xml",
     ),
 }
 
@@ -67,8 +62,9 @@ _TLS_HINT_WITH_TRUSTSTORE = (
 _HINTS = {
     "proxy": (
         "A proxy refused the connection. In a Claude Code cloud session, add "
-        "'sanctionslistservice.ofac.treas.gov' and 'www.international.gc.ca' under the "
-        "environment's Network access > Allowed domains, or run this fetch on your own machine."
+        "'scsanctions.un.org' and 'unsolprodfiles.blob.core.windows.net' (where the UN "
+        "redirects the download) under the environment's Network access > Allowed domains, "
+        "or run this fetch on your own machine."
     ),
     "network": (
         "Couldn't download from the server. Check your internet connection and try again; "
@@ -178,7 +174,7 @@ def fetch(only: list[str] | None = None) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Fetch US + Canada sanctions lists.")
+    ap = argparse.ArgumentParser(description="Fetch the UN Security Council sanctions list.")
     ap.add_argument(
         "--only",
         nargs="*",
