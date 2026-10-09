@@ -35,13 +35,17 @@ class ModelError(Exception):
 
 
 def request(method: str, url: str, *, headers: dict | None = None, json: dict | None = None,
-            params: dict | None = None, timeout: float = 15) -> requests.Response:
+            params: dict | None = None, timeout: float = 15,
+            deadline: float | None = None) -> requests.Response:
     """Send one request, retrying a dropped connection, HTTP 429 or 5xx up to RETRIES times.
 
     Returns the last response, so the caller decides what a 4xx means. Raises the
     requests exception when the last attempt could not connect. Certificate and proxy
     failures come back the same every time, and a read timeout means the server is
     slow rather than gone, so those are raised at once instead of retried.
+
+    ``deadline`` is a ``time.monotonic()`` reading. No retry starts after it, because by
+    then nobody is waiting for the answer (see ``_within``).
     """
     for attempt in range(RETRIES + 1):
         try:
@@ -49,12 +53,21 @@ def request(method: str, url: str, *, headers: dict | None = None, json: dict | 
         except (requests.exceptions.SSLError, requests.exceptions.ProxyError):
             raise
         except requests.exceptions.ConnectionError:  # includes a connect timeout
-            if attempt == RETRIES:
+            if _last_try(attempt, deadline):
                 raise
         else:
-            if attempt == RETRIES or (resp.status_code != 429 and resp.status_code < 500):
+            if (resp.status_code != 429 and resp.status_code < 500) or _last_try(attempt, deadline):
                 return resp
+        # Only a failure worth retrying gets this far: wait, then go round again.
         time.sleep(BACKOFF_S[attempt])
+
+
+def _last_try(attempt: int, deadline: float | None) -> bool:
+    """True when this attempt has to be the final one: the retries are used up, or the
+    next one would only start after the deadline."""
+    if attempt == RETRIES:
+        return True
+    return deadline is not None and time.monotonic() + BACKOFF_S[attempt] >= deadline
 
 
 def chat(messages: list[dict], name: str, schema: dict, timeout: float = CHAT_TIMEOUT_S) -> str:
@@ -93,12 +106,16 @@ def _within(seconds: float, *args, **kwargs) -> requests.Response:
     """request(), given up after ``seconds`` in total. requests' timeout limits each
     socket read, and OpenRouter keeps the connection alive with whitespace while the
     model works, so only a bound on the whole call stops a slow one. The abandoned
-    worker is a daemon thread, so it never holds up shutdown."""
+    worker is a daemon thread, so it never holds up shutdown, and the shared deadline
+    stops it from starting retries whose answers nobody would read."""
+    # ponytail: Python can't cancel a thread, so an abandoned call still runs its current
+    # attempt to the end; stream the reply and close the connection if that ever costs too much.
     box: dict = {}
+    deadline = time.monotonic() + seconds
 
     def run():
         try:
-            box["resp"] = request(*args, **kwargs)
+            box["resp"] = request(*args, deadline=deadline, **kwargs)
         except BaseException as err:  # re-raised in the caller's thread below
             box["err"] = err
 

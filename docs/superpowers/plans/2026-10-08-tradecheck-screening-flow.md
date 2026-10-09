@@ -15,11 +15,11 @@
 - No new dependencies. Remove `duckdb` from `requirements.txt`; everything else is already there, and `uvicorn[standard]` brings `python-dotenv`.
 - Python 3.10 or later. Run every command from the repo root with the project's Python, after `pip install -r requirements.txt`.
 - OpenSanctions: `POST https://api.opensanctions.org/match/sanctions` with `algorithm=logic-v2`, `threshold=0.7`, `limit=5`; header `Authorization: ApiKey <key>`; timeout 15 s.
-- OpenRouter: `POST https://openrouter.ai/api/v1/chat/completions`, model `qwen/qwen3.8-27b`, `temperature: 0`, `seed: 42`, strict `json_schema` response format, `provider: {"require_parameters": true}`, `reasoning: {"effort": "low"}`; header `Authorization: Bearer <key>`; timeout 40 s.
+- OpenRouter: `POST https://openrouter.ai/api/v1/chat/completions`, model `qwen/qwen3.8-27b`, `temperature: 0`, `seed: 42`, strict `json_schema` response format, `provider: {"require_parameters": true, "sort": "throughput"}` (`sort` added after the live check; spec section 3), `reasoning: {"effort": "low"}`; header `Authorization: Bearer <key>`; timeout 40 s.
 - Tavily: `POST https://api.tavily.com/search` with `topic: "news"`, `search_depth: "basic"`, `max_results: 5`; header `Authorization: Bearer <key>`; timeout 15 s.
 - Transport retries: up to 3 after the first attempt, waiting 1, 2 and 4 s, only on a dropped connection, HTTP 429 or HTTP 5xx.
 - Bands: clear below 0.70, review from 0.70, hit from 0.90, unknown when the match check failed. Labels `Clear*`, `Caution`, `Avoid`, `Unknown`. Statuses `cleared`, `pending_review` (then `reviewed`), `flagged`, `unknown`.
-- Layer 3: `MAX_RETRIES = 3` (at most 4 model calls), `DEADLINE_S = 60`, `PROMPT_VERSION = "report-v1"`.
+- Layer 3: `MAX_RETRIES = 3` (at most 4 model calls), `DEADLINE_S = 60`, `PROMPT_VERSION = "report-v2"` (was `report-v1` until the live check; spec section 5.5). The code blocks in the tasks below show what each task wrote at the time.
 - Keys live only in `.env`: `OPENSANCTIONS_API_KEY`, `OPENROUTER_API_KEY`, `TAVILY_API_KEY`. Never print, log or commit a key. The audit log records the model ID, never request headers.
 - Never disable TLS verification.
 - Fixed text: disclaimer "Not legal advice. Screening reflects the listed sources as of the dates shown."; footer "Sanctions data: OpenSanctions, CC BY-NC 4.0. Not legal advice."; next step for review "An analyst should compare the details and confirm or dismiss this match." and for hit "Hold and escalate. Don't proceed until reviewed."

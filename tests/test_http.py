@@ -64,6 +64,13 @@ def test_slow_or_deterministic_failures_are_not_retried(transport, error):
     assert transport["n"] == 1
 
 
+def test_no_retry_starts_after_the_deadline(transport):
+    # When chat() gives up on a slow model call, its worker thread must not keep retrying.
+    transport["answers"] = [FakeResponse(503)]
+    assert http.request("GET", "https://example.invalid", deadline=time.monotonic()).status_code == 503
+    assert (transport["n"], transport["slept"]) == (1, [])
+
+
 def test_chat_sends_the_pinned_settings(fake_http):
     routes, calls = fake_http
     routes["openrouter.ai"] = chat_reply({"ok": True})
@@ -79,6 +86,7 @@ def test_chat_sends_the_pinned_settings(fake_http):
         "name": "probe", "strict": True, "schema": {"type": "object"}}}
     assert kwargs["headers"] == {"Authorization": "Bearer test-key"}
     assert kwargs["timeout"] == 40
+    assert 0 < kwargs["deadline"] - time.monotonic() <= 40
 
 
 def test_chat_gives_up_when_the_whole_call_outlasts_its_timeout(fake_http):

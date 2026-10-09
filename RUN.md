@@ -39,6 +39,8 @@ python -m tradecheck.pipeline "Is KHAWA PANGA MANDRO sanctioned?" "Can we sell t
 
 The command reads `.env` itself. Each line shows the label, score, top candidate, UN check, where the fields came from (`model` or `fallback`), whether the match was live, the report check and attempts, the time taken and the screen ID. Add `--full` to print each whole result as JSON.
 
+Every screen makes live API calls and spends credits: one model call to extract the party and one OpenSanctions match. A Caution or Avoid result adds an OpenSanctions entity lookup, a Tavily search and up to four model calls for the report. Starting this command or the web app adds one OpenSanctions `/catalog` call. The tests make no calls.
+
 ## 3. Run the web app
 
 ```bash

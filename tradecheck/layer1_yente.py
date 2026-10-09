@@ -22,6 +22,7 @@ ALGORITHM = "logic-v2"
 THRESHOLD = 0.7
 LIMIT = 5
 TIMEOUT_S = 15
+PARAMS = {"algorithm": ALGORITHM, "threshold": THRESHOLD, "limit": LIMIT}  # sent as query parameters
 
 
 class YenteUnavailable(Exception):
@@ -29,27 +30,36 @@ class YenteUnavailable(Exception):
 
 
 def _headers() -> dict:
+    """The auth header. The key is read from the environment and never logged."""
     return {"Authorization": f"ApiKey {os.environ.get('OPENSANCTIONS_API_KEY', '')}"}
 
 
+def payload(query: dict) -> dict:
+    """The part of a parsed query that yente receives. The request body and the cache
+    key are both built from this one place, so they can't drift apart."""
+    return {"schema": query["schema"], "properties": query["properties"]}
+
+
 def query_hash(query: dict) -> str:
-    """SHA-256 of the canonical JSON of what is sent, plus the pinned settings."""
-    sent = {"collection": COLLECTION, "algorithm": ALGORITHM, "threshold": THRESHOLD, "limit": LIMIT,
-            "query": {"schema": query["schema"], "properties": query["properties"]}}
+    """SHA-256 of the canonical JSON of what is sent, plus the pinned settings.
+
+    Careful: changing what goes in here changes every key, and the saved responses in
+    data/tradecheck.sqlite (the demo's offline replays) would stop matching."""
+    sent = {"collection": COLLECTION, **PARAMS, "query": payload(query)}
     return hashlib.sha256(json.dumps(sent, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
 def match(query: dict) -> dict:
     """Return {"candidates" (best first), "live", "fetched_at", "query_hash"}.
-    Raises YenteUnavailable when the call fails and nothing is saved."""
+    Raises YenteUnavailable when the call fails and nothing is saved.
+
+    The live call always goes first, so every screen spends one match call. The saved
+    answer is only the fallback for when OpenSanctions can't be reached."""
     qhash = query_hash(query)
     try:
         resp = http.request(
             "POST", f"{BASE_URL}/match/{COLLECTION}",
-            headers=_headers(),
-            params={"algorithm": ALGORITHM, "threshold": THRESHOLD, "limit": LIMIT},
-            json={"queries": {"q": {"schema": query["schema"], "properties": query["properties"]}}},
-            timeout=TIMEOUT_S,
+            headers=_headers(), params=PARAMS, json={"queries": {"q": payload(query)}}, timeout=TIMEOUT_S,
         )
         resp.raise_for_status()
         candidates = sorted(resp.json()["responses"]["q"]["results"], key=lambda c: c["score"], reverse=True)
@@ -64,6 +74,7 @@ def match(query: dict) -> dict:
 
 
 def _why(err: Exception) -> str:
+    """A short, readable reason for the audit log and the Unknown report."""
     if isinstance(err, requests.HTTPError) and err.response is not None:
         return f"OpenSanctions answered HTTP {err.response.status_code}"
     if isinstance(err, (ValueError, KeyError, TypeError)):
@@ -72,7 +83,8 @@ def _why(err: Exception) -> str:
 
 
 def entity(entity_id: str) -> dict | None:
-    """The full record, with nested sanction entries and linked entities. None on failure."""
+    """The full record, with nested sanction entries and linked entities. None on failure.
+    Layer 3 calls this once per review or hit screen, and only after a live match."""
     try:
         resp = http.request("GET", f"{BASE_URL}/entities/{quote(entity_id, safe='')}",
                             headers=_headers(), timeout=TIMEOUT_S)
@@ -84,7 +96,8 @@ def entity(entity_id: str) -> dict | None:
 
 
 def catalog_as_of() -> str | None:
-    """When the sanctions collection was last updated, from GET /catalog. None if unknown."""
+    """When the sanctions collection was last updated, from GET /catalog. None if unknown.
+    Called once at startup (pipeline.start), not once per screen."""
     try:
         resp = http.request("GET", f"{BASE_URL}/catalog", headers=_headers(), timeout=TIMEOUT_S)
         resp.raise_for_status()

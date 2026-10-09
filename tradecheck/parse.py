@@ -14,8 +14,8 @@ from tradecheck import http
 PROMPT_VERSION = "extract-v1"
 SCHEMAS = ("Person", "Company", "LegalEntity")
 NO_PARTY = "No party name found in the question"
-_COUNTRY = re.compile(r"[a-z]{2}")
-_DATE = re.compile(r"\d{4}(-\d{2}(-\d{2})?)?")
+_COUNTRY = re.compile(r"[a-z]{2}")              # ISO 3166-1 alpha-2, after lowercasing
+_DATE = re.compile(r"\d{4}(-\d{2}(-\d{2})?)?")  # YYYY, YYYY-MM or YYYY-MM-DD
 
 SYSTEM = """You extract the counterparty from a question about a trade deal.
 Return the one person or organisation the user wants to deal with:
@@ -55,6 +55,8 @@ def extract(question: str) -> dict:
     try:
         fields = _clean(json.loads(http.chat(messages, "query", JSON_SCHEMA)))
         source, reason = "model", None
+    # A failed call or unusable JSON falls back to screening the whole question. NoParty is
+    # deliberately not caught: a question that names nobody should fail, not be screened.
     except (http.ModelError, ValueError) as err:
         fields = {"schema": "LegalEntity", "name": question, "country": None,
                   "birth_date": None, "registration_number": None}
@@ -81,11 +83,13 @@ def _clean(raw) -> dict:
 
 
 def _text(value) -> str:
+    """The trimmed string, or "" for null or anything that isn't text."""
     return value.strip() if isinstance(value, str) else ""
 
 
 def _properties(fields: dict) -> dict:
-    """The FollowTheMoney properties sent to yente. Each value is a one-item list."""
+    """The FollowTheMoney properties sent to yente. Each value is a one-item list, and
+    empty fields are left out so yente only compares what the user actually gave."""
     extra = {
         "Person": {"country": fields["country"], "birthDate": fields["birth_date"]},
         "Company": {"jurisdiction": fields["country"], "registrationNumber": fields["registration_number"]},

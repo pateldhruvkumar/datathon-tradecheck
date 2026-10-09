@@ -7,6 +7,8 @@ from __future__ import annotations
 
 CLEAR_BELOW = 0.70  # placeholder cutoffs until a labelled test set exists
 HIT_AT = 0.90
+# What the user sees for each band, and the status a screen starts with. A review case
+# moves to "reviewed" once an analyst decides (audit.review).
 LABEL = {"clear": "Clear*", "review": "Caution", "hit": "Avoid", "unknown": "Unknown"}
 STATUS = {"clear": "cleared", "review": "pending_review", "hit": "flagged", "unknown": "unknown"}
 

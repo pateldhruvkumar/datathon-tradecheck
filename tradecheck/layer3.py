@@ -69,14 +69,20 @@ _LABELS = {"country": "country", "birthDate": "birth date", "jurisdiction": "jur
 
 def report(query: dict, match: dict, un: dict, band: dict) -> dict:
     """The report for a review or hit case (the spec, section 5.5)."""
-    start = time.monotonic()
+    start = time.monotonic()  # the DEADLINE_S clock includes the two lookups below
     top = match["candidates"][0]
-    record = layer1_yente.entity(top["id"])
+    if match["live"]:
+        record = layer1_yente.entity(top["id"])  # the full record, with nested sanction entries
+        entity_step = "ok" if record else "unavailable"
+    else:
+        # The match was replayed from the cache because OpenSanctions just failed, so this
+        # lookup would almost surely fail too, after its own retries. Use the match instead.
+        record, entity_step = None, "skipped"
     news, news_status = _news(top.get("caption", ""), query.get("country"))
     bundle = build_bundle(top, record, news, un)
     out, attempts, reason = _ask_model(query, band, bundle, news_status, start)
     if out is None:
-        out = template(query, bundle, top["id"])
+        out = template(query, bundle, top["id"])  # code writes it, so it always passes the check
     claims = [out["summary"], *(claim for section in SECTIONS for claim in out[section])]
     cited = {key for claim in claims for key in claim["cites"]}
     return {
@@ -91,12 +97,12 @@ def report(query: dict, match: dict, un: dict, band: dict) -> dict:
         "model": http.MODEL,
         "prompt_version": PROMPT_VERSION,
         "seed": http.SEED,
-        "steps": {"entity": "ok" if record else "unavailable", "news": news_status},
+        "steps": {"entity": entity_step, "news": news_status},
     }
 
 
 def _news(caption: str, country: str | None) -> tuple[list[dict], str]:
-    """Tavily news search. Returns (results, "ok" | "unavailable")."""
+    """Tavily news search, one basic search (1 credit). Returns (results, "ok" | "unavailable")."""
     query = " ".join(filter(None, (f'"{caption}"', country, "sanctions OR fraud OR investigation")))
     try:
         resp = http.request(
@@ -114,7 +120,9 @@ def _news(caption: str, country: str | None) -> tuple[list[dict], str]:
 
 def build_bundle(top: dict, record: dict | None, news: list[dict], un: dict) -> dict:
     """Every fact the report may use, keyed by the citation key that must cite it."""
+    # The full record when we have it; otherwise the properties that came with the match.
     props = (record or top).get("properties") or {}
+    # The candidate itself, cited by its OpenSanctions ID.
     bundle = {top["id"]: {
         "kind": "candidate",
         "label": top.get("caption") or top["id"],
@@ -129,6 +137,7 @@ def build_bundle(top: dict, record: dict | None, news: list[dict], un: dict) -> 
         "last_change": top.get("last_change"),
         "properties": {key: _texts(values) for key, values in props.items() if key != "sanctions"},
     }}
+    # Each nested sanction entry, cited by its own ID. Only the full record has these.
     for entry in props.get("sanctions") or []:
         if isinstance(entry, dict) and entry.get("id"):
             p = entry.get("properties") or {}
@@ -138,12 +147,14 @@ def build_bundle(top: dict, record: dict | None, news: list[dict], un: dict) -> 
                 "url": _safe_url(next(iter(_texts(p.get("sourceUrl"))), None)) or ENTITY_URL.format(top["id"]),
                 "properties": {key: _texts(values) for key, values in p.items() if key != "entity"},
             }
+    # News articles, cited by their URL. An article without an http(s) link is left out.
     for article in news:
         url = _safe_url(article.get("url"))
         if url:
             bundle[url] = {"kind": "news", "label": article.get("title") or url, "url": url,
                            "title": article.get("title"), "content": article.get("content"),
                            "published_date": article.get("published_date")}
+    # The UN record, when the UN check found one.
     best = un.get("best")
     if best:
         bundle[f"UN:{best['ref']}"] = {"kind": "un", "label": f"UN list entry {best['ref']}",
@@ -167,6 +178,7 @@ def _ask_model(query: dict, band: dict, bundle: dict, news_status: str,
                start: float) -> tuple[dict | None, int, str | None]:
     """Model call 2, retried with the list of failures.
     Returns (report or None, attempts, why it failed or None)."""
+    messages = _messages(query, band, bundle, news_status)  # the same on every attempt, so build it once
     failures: list[str] = []
     attempts = 0
     while attempts <= MAX_RETRIES:
@@ -175,9 +187,11 @@ def _ask_model(query: dict, band: dict, bundle: dict, news_status: str,
             return None, attempts, "deadline passed" + (f" ({'; '.join(failures)})" if failures else "")
         attempts += 1
         try:
-            text = http.chat(_messages(query, band, bundle, news_status, failures), "report", REPORT_SCHEMA,
+            text = http.chat(messages + _retry_note(failures), "report", REPORT_SCHEMA,
                              timeout=min(http.CHAT_TIMEOUT_S, left))
         except http.ModelError as err:
+            # The transport has already retried this call, so another attempt would most
+            # likely fail the same way. Go straight to the template.
             return None, attempts, f"model unavailable: {err}"
         try:
             out = json.loads(text)
@@ -190,20 +204,25 @@ def _ask_model(query: dict, band: dict, bundle: dict, news_status: str,
     return None, attempts, "citation check failed: " + "; ".join(failures)
 
 
-def _messages(query: dict, band: dict, bundle: dict, news_status: str, failures: list[str]) -> list[dict]:
+def _messages(query: dict, band: dict, bundle: dict, news_status: str) -> list[dict]:
+    """The system prompt, plus everything the model may use as one JSON message."""
     evidence = {
         "band": band["band"],
         "score": band["score"],
-        "query": {"schema": query["schema"], "properties": query["properties"]},
+        "query": layer1_yente.payload(query),  # exactly what the matcher was asked
         "news_search": news_status,
         "bundle": bundle,
     }
-    messages = [{"role": "system", "content": SYSTEM},
-                {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)}]
-    if failures:
-        messages.append({"role": "user", "content": "Your last report failed the citation check:\n- "
-                         + "\n- ".join(failures) + "\nReturn the whole report again with every problem fixed."})
-    return messages
+    return [{"role": "system", "content": SYSTEM},
+            {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)}]
+
+
+def _retry_note(failures: list[str]) -> list[dict]:
+    """After a failed attempt, one extra message listing what to fix. Nothing on the first try."""
+    if not failures:
+        return []
+    return [{"role": "user", "content": "Your last report failed the citation check:\n- "
+             + "\n- ".join(failures) + "\nReturn the whole report again with every problem fixed."}]
 
 
 def check_citations(out, bundle: dict) -> list[str]:
@@ -236,10 +255,11 @@ def template(query: dict, bundle: dict, top_id: str) -> dict:
     keys, so it always passes check_citations."""
     c = bundle[top_id]
     p = c["properties"]
-    cite = [top_id]
+    cite = [top_id]  # most lines are about the candidate, so they cite it
     datasets = ", ".join(c["datasets"]) or "no named dataset"
     summary = _claim(f"{c['caption']} ({c['schema']}) matched with score {c['score']:.2f}; listed in {datasets}.", cite)
 
+    # who_matched: the listed names and identifying details.
     who = [_claim(f"Listed as {c['caption']} ({c['schema']}).", cite)]
     aliases = [a for a in dict.fromkeys(p.get("alias", []) + p.get("weakAlias", [])) if a != c["caption"]]
     if aliases:
@@ -249,6 +269,9 @@ def template(query: dict, bundle: dict, top_id: str) -> dict:
         if p.get(prop):
             who.append(_claim(f"{label}: {', '.join(p[prop])}.", cite))
 
+    # why_it_matched and differences: the matcher's own features that fired, split into the
+    # ones that count for the match and the penalties, plus each detail the user gave that
+    # the listing lacks or contradicts.
     features = [(name, r) for name, r in c["explanations"].items() if isinstance(r, dict) and (r.get("score") or 0) > 0]
     why = [_claim(_feature_line("Matcher feature", name, r), cite) for name, r in features if not _penalty(name)]
     why = why or [_claim(f"Overall match score {c['score']:.2f}.", cite)]
@@ -258,6 +281,7 @@ def template(query: dict, bundle: dict, top_id: str) -> dict:
         differences = [_claim("The details you gave agree with the listing." if len(query["properties"]) > 1
                               else "Only a name was given, so no other details could be compared.", cite)]
 
+    # sanctions and news: one line per bundle item, each citing only itself.
     sanctions = [_claim(_sanction_line(item), [key]) for key, item in bundle.items() if item["kind"] == "sanction"]
     sanctions += [_claim(f"UN Security Council list entry {item['ref']} ({item['list_type']}), listed "
                          f"{item['listed_on']}: matched {item['matched_name']} ({item['quality']}, "
@@ -271,14 +295,17 @@ def template(query: dict, bundle: dict, top_id: str) -> dict:
 
 
 def _claim(text: str, cites: list[str]) -> dict:
+    """One report line and the bundle keys that back it."""
     return {"text": text, "cites": cites}
 
 
 def _penalty(feature: str) -> bool:
+    """True for a matcher feature that counts against the match, such as country_mismatch."""
     return any(word in feature for word in _PENALTY_WORDS)
 
 
 def _feature_line(prefix: str, name: str, result: dict) -> str:
+    """One matcher feature as a sentence, e.g. "Matcher feature name_literal_match scored 1.00"."""
     detail = f": {result['detail']}" if result.get("detail") else ""
     return f"{prefix} {name} scored {result['score']:.2f}{detail}."
 
@@ -299,6 +326,7 @@ def _field_differences(query: dict, listed: dict, cite: list[str]) -> list[dict]
 
 
 def _sanction_line(item: dict) -> str:
+    """One sanction entry as a sentence: program, then authority and start date when known."""
     p = item["properties"]
     line = item["label"]
     if p.get("authority"):

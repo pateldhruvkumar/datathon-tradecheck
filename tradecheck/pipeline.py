@@ -1,6 +1,7 @@
 """Run one question through every layer and write the audit trail.
 
-Also a command line for the live check (it reads the keys from .env):
+Also a command line for the live check (it reads the keys from .env). It makes real
+API calls and spends credits; the tests never do (see RUN.md):
     python -m tradecheck.pipeline "Is KHAWA PANGA MANDRO sanctioned?" "Chief Kahwa"
     python -m tradecheck.pipeline --full "Chief Kahwa"     # the whole result as JSON
 """
@@ -40,6 +41,8 @@ def screen(question: str) -> dict:
     screen_id = str(uuid.uuid4())
     checked_at = audit.now()
     model = {"model": http.MODEL, "prompt_version": parse.PROMPT_VERSION}
+
+    # Input: model call 1 pulls the party out of the question.
     try:
         query = parse.extract(question)
     except parse.NoParty as err:
@@ -54,6 +57,8 @@ def screen(question: str) -> dict:
             query = {**saved, "source": "saved", "fallback_reason": query["fallback_reason"]}
     audit.log(screen_id, "input", {"question": question, "parsed": query, "source": query["source"], **model})
 
+    # Layer 1: the OpenSanctions match, then our own UN cross-check. The UN check runs even
+    # when the match failed, so the audit record always shows what it found.
     try:
         match, error = layer1_yente.match(query), None
     except layer1_yente.YenteUnavailable as err:
@@ -61,6 +66,7 @@ def screen(question: str) -> dict:
     un = layer1_un.check(query, match)
     live = bool(match and match["live"])
     fetched_at = match["fetched_at"] if match else None
+    # Just what the page and the audit log need. The full candidates stay in `match` for Layer 3.
     candidates = [{"id": c["id"], "caption": c.get("caption"), "score": c["score"], "datasets": c.get("datasets", [])}
                   for c in (match["candidates"] if match else [])]
     audit.log(screen_id, "layer1", {
@@ -69,9 +75,12 @@ def screen(question: str) -> dict:
         "query_hash": match["query_hash"] if match else None, "error": error, "un": un,
     })
 
+    # Layer 2: fixed rules pick the band. No model is involved.
     band = layer2.band(match, un, fallback=query["source"] == "fallback")
     audit.log(screen_id, "layer2", band)
 
+    # Layer 3: a cited report, but only for review and hit cases with a candidate to explain.
+    # Every other case gets a fixed report and makes no model call.
     if band["band"] in ("review", "hit") and candidates:
         try:
             report = layer3.report(query, match, un, band)
@@ -108,31 +117,37 @@ def _fixed_report(band: dict, error: str | None) -> dict:
     matcher candidate to explain. No model call."""
     name = band["band"]
     if name == "unknown":
-        summary, sources = {"text": f"Live check failed: {error}. Not clear. Retry.", "cites": []}, []
-    elif name == "clear":
-        summary = {"text": f"No candidate reached {layer2.CLEAR_BELOW:.2f} in the OpenSanctions sanctions "
-                           f"collection (US, Canada, EU, UK, UN and more) as of {AS_OF or 'the time checked'}, "
-                           "and the UN check agrees.", "cites": ["sanctions", "UN"]}
-        sources = [COLLECTION_SOURCE, UN_SOURCE]
+        return _plain_report(f"Live check failed: {error}. Not clear. Retry.", [], None, "fixed")
+    if name == "clear":
+        text = (f"No candidate reached {layer2.CLEAR_BELOW:.2f} in the OpenSanctions sanctions "
+                f"collection (US, Canada, EU, UK, UN and more) as of {AS_OF or 'the time checked'}, "
+                "and the UN check agrees.")
     else:
-        summary = {"text": f"No matcher candidate reached {layer2.CLEAR_BELOW:.2f}, but this needs review: "
-                           + "; ".join(band["reasons"]) + ".", "cites": ["sanctions", "UN"]}
-        sources = [COLLECTION_SOURCE, UN_SOURCE]
-    return {"summary": summary, "sections": {section: [] for section in layer3.SECTIONS}, "sources": sources,
-            "next_step": layer3.NEXT_STEP.get(name), "check": "fixed", "check_reason": None,
-            "attempts": 0, "steps": {}}
+        text = (f"No matcher candidate reached {layer2.CLEAR_BELOW:.2f}, but this needs review: "
+                + "; ".join(band["reasons"]) + ".")
+    return _plain_report(text, [COLLECTION_SOURCE, UN_SOURCE], layer3.NEXT_STEP.get(name), "fixed")
 
 
 def _error_report(band: dict, err: Exception) -> dict:
     """The report when Layer 3 itself fails: the band stands, and the error is named."""
-    return {"summary": {"text": "The evidence report could not be built, so only the matcher's result "
-                                "is shown.", "cites": []},
-            "sections": {section: [] for section in layer3.SECTIONS}, "sources": [],
-            "next_step": layer3.NEXT_STEP[band["band"]], "check": "error",
-            "check_reason": f"{type(err).__name__}: {err}", "attempts": 0, "steps": {}}
+    return _plain_report("The evidence report could not be built, so only the matcher's result is shown.",
+                         [], layer3.NEXT_STEP[band["band"]], "error", f"{type(err).__name__}: {err}")
+
+
+def _plain_report(text: str, sources: list[dict], next_step: str | None, check: str,
+                  check_reason: str | None = None) -> dict:
+    """A one-line report written without the model, in the same shape as layer3.report(),
+    so the page and the audit log handle every report the same way. The line cites
+    every source passed in."""
+    return {"summary": {"text": text, "cites": [source["key"] for source in sources]},
+            "sections": {section: [] for section in layer3.SECTIONS}, "sources": sources,
+            "next_step": next_step, "check": check, "check_reason": check_reason,
+            "attempts": 0, "steps": {}}
 
 
 def main(argv: list[str] | None = None) -> int:
+    """The command line: screen each question and print one summary line (or, with
+    --full, the whole JSON result). Questions with no party are reported and skipped."""
     from dotenv import load_dotenv  # comes with uvicorn[standard]
 
     for stream in (sys.stdout, sys.stderr):

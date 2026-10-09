@@ -109,13 +109,17 @@
 
   <script>
     const $ = id => document.getElementById(id);
+    // Every piece of text from the server goes through esc() before it reaches innerHTML.
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
     // Only http(s) links become hrefs; anything else (javascript:, data:) goes nowhere.
     const safeUrl = u => /^https?:\/\//i.test(String(u ?? "")) ? String(u) : "#";
-    const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${text}</a>`;
+    // A link that opens in a new tab. It escapes both the URL and the text, so pass raw values.
+    const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${esc(text)}</a>`;
     const num = n => typeof n === "number" ? n.toFixed(2) : "—";
     const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
-    const CLASS = { "Avoid": "avoid", "Caution": "caution", "Clear*": "clear", "Unknown": "unknown" };
+    // Card colour and one-line meaning per band. Keyed by band rather than by label, so
+    // renaming a label in tradecheck/layer2.py can't quietly turn the card grey.
+    const CLASS = { hit: "avoid", review: "caution", clear: "clear", unknown: "unknown" };
     const LINE = {
       hit: "Strong sanctions match.",
       review: "Possible match, flagged for human review.",
@@ -125,6 +129,8 @@
     const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
                       ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
 
+    // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
+    // detail (a validation error lists each field), so callers can show it as is.
     async function api(path, body) {
       const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
       const r = await fetch(path, opts);
@@ -136,6 +142,7 @@
       return data;
     }
 
+    // One list item per claim. Each citation becomes a numbered link to its entry in Sources.
     function claimsHtml(claims, sources) {
       const index = Object.fromEntries(sources.map((s, i) => [s.key, i]));
       return claims.map(c => `<li>${esc(c.text)}${(c.cites || []).map(key => {
@@ -144,6 +151,8 @@
       }).join("")}</li>`).join("");
     }
 
+    // The report card: summary, the five sections, next step and sources. Used both for a
+    // fresh result and for a case opened from the queue.
     function reportHtml(rep) {
       const sources = rep.sources || [];
       let html = `<div class="card"><h3>Report</h3><ul class="claims">${claimsHtml([rep.summary], sources)}</ul>`;
@@ -163,11 +172,12 @@
         html += `<p class="note">The model's report didn't pass its checks (${esc(rep.check_reason)}), so code wrote this report from the evidence.</p>`;
       }
       if (sources.length) {
-        html += `<h4>Sources</h4><ol class="claims">${sources.map(s => `<li>${link(s.url, esc(s.label))}</li>`).join("")}</ol>`;
+        html += `<h4>Sources</h4><ol class="claims">${sources.map(s => `<li>${link(s.url, s.label)}</li>`).join("")}</ol>`;
       }
       return html + "</div>";
     }
 
+    // "What we screened": the extracted fields, with a note when they didn't come from the model.
     function fieldsHtml(p) {
       const rows = [["Type", p.schema], ["Name", p.name], ["Country", p.country], ["Birth date", p.birth_date],
                     ["Registration no.", p.registration_number]].filter(([, v]) => v);
@@ -181,9 +191,10 @@
       return html;
     }
 
+    // The whole result for one screen (the POST /screen response).
     function render(res) {
       const un = res.un_check;
-      let html = `<div class="verdict ${CLASS[res.label] || "unknown"}">
+      let html = `<div class="verdict ${CLASS[res.band] || "unknown"}">
           <h2>${esc(res.label)}${res.status === "unknown" ? "" : ` <span class="badge">${esc(res.status.replace("_", " "))}</span>`}</h2>
           <p>${esc(LINE[res.band])} Score: ${num(res.score)}.</p>
           <p class="hint">${res.reasons.map(esc).join(" · ")}</p>
@@ -194,7 +205,7 @@
       html += `<div class="card"><h3>What we screened</h3>${fieldsHtml(res.parsed)}</div>`;
       if (res.candidates.length) {
         html += `<div class="card"><h3>Matcher candidates</h3><ul class="claims">${res.candidates.map(c =>
-          `<li>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", esc(c.caption))} · score ${num(c.score)} · ${esc(c.datasets.join(", "))}</li>`).join("")}</ul></div>`;
+          `<li>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)} · score ${num(c.score)} · ${esc(c.datasets.join(", "))}</li>`).join("")}</ul></div>`;
       }
       html += `<div class="card"><h3>UN cross-check: ${esc(un.status)}</h3><p class="hint">${esc(cap(un.reason))}.${
         un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p></div>`;
@@ -206,6 +217,7 @@
       $("out").innerHTML = html;
     }
 
+    // Refresh the review queue panel. Runs on page load and after every screen or decision.
     async function loadQueue() {
       try {
         const items = await api("/queue");
@@ -218,8 +230,10 @@
       }
     }
 
+    // Open a queue case from its audit record: the query beside the top candidate, the
+    // report, and the decision buttons.
     async function openCase(id) {
-      const ev = {};
+      const ev = {};  // the screen's events by step
       for (const e of await api(`/audit/${encodeURIComponent(id)}`)) ev[e.step] = e.data;
       const top = (ev.layer1.candidates || [])[0];
       const topHtml = top
@@ -258,11 +272,13 @@
       });
     }
 
+    // One listener for the whole queue: each Open button carries its screen ID.
     $("queue").addEventListener("click", e => {
       const id = e.target.dataset && e.target.dataset.id;
       if (id) openCase(id).catch(err => { $("case").innerHTML = `<p class="err">${esc(err.message)}</p>`; });
     });
 
+    // The question box: screen the question, show the result, then refresh the queue.
     $("f").addEventListener("submit", async e => {
       e.preventDefault();
       const question = $("q").value.trim();

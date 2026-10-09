@@ -167,6 +167,16 @@ def test_entity_failure_falls_back_to_the_match_properties(services):
     assert rep["next_step"] == "An analyst should compare the details and confirm or dismiss this match."
 
 
+def test_a_replayed_match_skips_the_entity_lookup(services, fake_http):
+    # OpenSanctions failed moments ago, so asking it for the full record would only add
+    # more failed calls and backoff. The saved match's properties are used instead.
+    _, calls = fake_http
+    _model(services, chat_reply({**GOOD, "sanctions": []}))  # no sanction entries without the record
+    rep = layer3.report(QUERY, {**MATCH, "live": False}, UN, HIT)
+    assert (rep["steps"]["entity"], rep["check"]) == ("skipped", "pass")
+    assert not [url for _, url, _ in calls if "/entities/" in url]
+
+
 @pytest.mark.parametrize("record, news", [(RECORD, NEWS), (None, [])])
 def test_the_template_always_passes_its_own_check(record, news):
     bundle = layer3.build_bundle(TOP, record, news, UN)

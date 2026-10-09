@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS yente_cache (
 """
 
 # Review-band screens with no review yet. One query, no extra table.
+# ponytail: no index covers step or the JSON band, so this reads every event; fine at demo
+# size, add an index on (step, json_extract(data, '$.band')) if the log grows large.
 QUEUE_SQL = """
 SELECT l2.screen_id, l2.at, json_extract(inp.data, '$.question'), json_extract(l2.data, '$.score')
 FROM events AS l2
@@ -57,11 +59,15 @@ class AlreadyReviewed(ValueError):
 
 
 def now() -> str:
+    """The current UTC time as ISO-8601, to the second. Every timestamp in the log uses it."""
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 @contextmanager
 def _db():
+    """A short-lived connection for one unit of work."""
+    # ponytail: a fresh connection per call (5-7 per screen) keeps FastAPI's worker threads
+    # from sharing one; reuse a connection per screen if connecting ever shows up in a profile.
     con = sqlite3.connect(DB_PATH)
     try:
         with con:  # commit on success, roll back on error
@@ -78,6 +84,8 @@ def init() -> None:
 
 
 def _insert(con: sqlite3.Connection, screen_id: str, step: str, data: dict) -> None:
+    # Always a plain INSERT, never INSERT OR REPLACE: REPLACE would delete a clashing row
+    # (an earlier review) without firing the no-delete trigger.
     con.execute(
         "INSERT INTO events (screen_id, at, step, data) VALUES (?, ?, ?, ?)",
         (screen_id, now(), step, json.dumps(data, ensure_ascii=False)),
@@ -85,6 +93,7 @@ def _insert(con: sqlite3.Connection, screen_id: str, step: str, data: dict) -> N
 
 
 def log(screen_id: str, step: str, data: dict) -> None:
+    """Append one event. Each step writes its own after it runs; nothing is changed later."""
     with _db() as con:
         _insert(con, screen_id, step, data)
 
@@ -99,6 +108,7 @@ def record(screen_id: str) -> list[dict]:
 
 
 def queue() -> list[dict]:
+    """The cases waiting for an analyst, oldest first."""
     with _db() as con:
         rows = con.execute(QUEUE_SQL).fetchall()
     return [{"screen_id": s, "at": at, "question": q, "score": score} for s, at, q, score in rows]
@@ -113,6 +123,8 @@ def review(screen_id: str, decision: str, note: str, reviewer: str) -> dict:
     if band != "review":
         raise NotInReview("Only cases in the review band can be reviewed")
     final = {"status": "reviewed", "decision": decision}
+    # Two analysts can both pass the checks above at once. The one_review_per_screen index
+    # is what stops the second: its insert fails here, and its transaction writes nothing.
     try:
         with _db() as con:
             _insert(con, screen_id, "review", {"reviewer": reviewer, "decision": decision, "note": note})
@@ -124,6 +136,7 @@ def review(screen_id: str, decision: str, note: str, reviewer: str) -> dict:
 
 def saved_extraction(question: str) -> dict | None:
     """The fields the model last extracted for this exact question, or None."""
+    # ponytail: scans every input event; only the fallback path runs it, so that's fine for now.
     with _db() as con:
         row = con.execute(
             "SELECT json_extract(data, '$.parsed') FROM events WHERE step = 'input' "
@@ -134,6 +147,8 @@ def saved_extraction(question: str) -> dict | None:
 
 
 def cache_put(query_hash: str, candidates: list, fetched_at: str) -> None:
+    """Save the latest yente answer for a query. REPLACE is fine here: yente_cache is a
+    cache, not the audit log, so only the newest answer matters."""
     with _db() as con:
         con.execute(
             "INSERT OR REPLACE INTO yente_cache (query_hash, response, fetched_at) VALUES (?, ?, ?)",
@@ -142,6 +157,7 @@ def cache_put(query_hash: str, candidates: list, fetched_at: str) -> None:
 
 
 def cache_get(query_hash: str) -> dict | None:
+    """The saved yente answer for a query, {"candidates", "fetched_at"}, or None."""
     with _db() as con:
         row = con.execute(
             "SELECT response, fetched_at FROM yente_cache WHERE query_hash = ?", (query_hash,)

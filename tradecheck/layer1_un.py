@@ -18,10 +18,11 @@ from tradecheck.layer2 import CLEAR_BELOW
 LIST_URL, _FILENAME = SOURCES["un_sc"]
 DEFAULT_PATH = RAW_DIR / _FILENAME
 WEIGHTS = {"primary": 1.0, "Good": 0.85, "Low": 0.60}  # the README's Oct 3 test on the UN sample
-UNRATED = 0.85       # an alias with an empty QUALITY
+UNRATED = 0.85       # any other QUALITY: empty, or the "a.k.a."/"f.k.a." the UN gives entity aliases
 STRONG_AT = 0.90     # only a primary name can reach this
 MIN_SIMILARITY = 70  # WRatio a UN name needs before it counts as found
 
+# The index. load() fills it once at startup; check() only reads it.
 _names: list[dict] = []   # one entry per primary name or alias
 _choices: list[str] = []  # the normalized names, in the same order
 _list_date: str | None = None
@@ -53,10 +54,12 @@ def load(path: Path | str = DEFAULT_PATH) -> int:
 
 
 def _text(element, tag: str) -> str:
+    """The trimmed text of a child element, or "" when it's missing."""
     return (element.findtext(tag) or "").strip()
 
 
 def _add(base: dict, name: str, quality: str) -> None:
+    """Index one name of a record. A name that normalizes to nothing is skipped."""
     normalized = normalize_name(name)
     if normalized:
         _names.append({**base, "matched_name": name, "quality": quality, "weight": WEIGHTS.get(quality, UNRATED)})
@@ -70,6 +73,8 @@ def check(query: dict, match: dict | None) -> dict:
     if not _names or not wanted:
         reason = "UN list not loaded" if not _names else "the name has no Latin letters to compare"
         return {"status": "unavailable", "best": None, "reason": reason, "list_date": _list_date}
+    # The best weighted score among the names that reach MIN_SIMILARITY. limit=None because
+    # the weights can reorder them: a Low alias at 100 scores below a primary name at 90.
     best = None
     for _, similarity, i in process.extract(wanted, _choices, scorer=fuzz.WRatio,
                                             score_cutoff=MIN_SIMILARITY, limit=None):
@@ -80,6 +85,10 @@ def check(query: dict, match: dict | None) -> dict:
                     "score": score, "listed_on": n["listed_on"], "list_type": n["list_type"]}
     top = match["candidates"][0] if match and match["candidates"] else None
     top_score = top["score"] if top else 0.0
+    # Rule (a): the UN list has a strong match, but the matcher scored it below the clear
+    # cutoff, so it may have missed a UN listing. Rule (b): the matcher's top candidate is
+    # on the UN list, but no UN name reaches MIN_SIMILARITY, which points to a delisting or
+    # data lag. Anything else agrees. (Spec, section 5.3.)
     if best and best["score"] >= STRONG_AT and top_score < CLEAR_BELOW:
         status = "disagree"
         reason = f'UN match "{best["matched_name"]}" scored {best["score"]:.2f} but the matcher\'s top score is {top_score:.2f}'
