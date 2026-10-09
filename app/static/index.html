@@ -4,108 +4,197 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TradeCheck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" />
   <style>
+    /* One column for a business owner: the answer first, then the five lists, what to do
+       next, why we think so, and the proof for their records. Atkinson Hyperlegible is
+       built for low-vision readers; the system fonts take over if Google Fonts is offline. */
     :root {
-      --bg: #f6f7f9; --card: #ffffff; --ink: #111418; --muted: #5b6672;
-      --border: #e2e6eb; --accent: #1d4ed8;
-      --avoid-bg: #fdecec; --avoid-ink: #a01a1a; --avoid-bar: #d64545;
-      --caution-bg: #fdf4e3; --caution-ink: #8a5a00; --caution-bar: #e0a100;
-      --clear-bg: #e9f7ef; --clear-ink: #116b3a; --clear-bar: #2f9e5f;
-      --unknown-bg: #eef0f2; --unknown-ink: #4a545f; --unknown-bar: #8893a0;
+      --bg: #f3f5f8; --surface: #ffffff; --ink: #18202e; --muted: #576274; --line: #dce1e8;
+      --accent: #2f3f86; --accent-ink: #ffffff; --accent-soft: #e7eaf6;
+      --avoid: #a12020; --avoid-bg: #fbe3e2;
+      --caution: #8d5b00; --caution-bg: #fcefd6;
+      --clear: #19673d; --clear-bg: #e0f2e7;
+      --unknown: #4f5866; --unknown-bg: #e8ebef;
+      --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+      --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0f1419; --card: #171d24; --ink: #e9edf1; --muted: #9aa6b2;
-        --border: #262e38; --accent: #6ea0ff;
-        --avoid-bg: #2a1718; --avoid-ink: #ff9b9b; --avoid-bar: #d64545;
-        --caution-bg: #2a2314; --caution-ink: #f0c66b; --caution-bar: #e0a100;
-        --clear-bg: #15241c; --clear-ink: #86e0ab; --clear-bar: #2f9e5f;
-        --unknown-bg: #1b2129; --unknown-ink: #aab4bf; --unknown-bar: #8893a0;
+        --bg: #0f131b; --surface: #171d28; --ink: #e6e9f0; --muted: #9aa4b5; --line: #2a3242;
+        --accent: #a9b6f2; --accent-ink: #10162b; --accent-soft: #1f2741;
+        --avoid: #ff9e98; --avoid-bg: #301817;
+        --caution: #f3c463; --caution-bg: #2c2412;
+        --clear: #8cd9ac; --clear-bg: #14281d;
+        --unknown: #b3bcc9; --unknown-bg: #1f2530;
+        color-scheme: dark;
       }
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--ink);
-      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
-    h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.3px; }
-    .tagline { color: var(--muted); margin: 0 0 24px; font-size: 15px; }
-    form#f { display: flex; gap: 8px; margin-bottom: 8px; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--body); padding: 28px 16px 64px; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 28px; }
+    .wrap > * { min-width: 0; }
+    #out { display: grid; gap: 28px; }
+    #out:empty { display: none; }
+
+    header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+    .logo { margin: 0; font: 800 24px var(--display); letter-spacing: -.4px; }
+    .logo span { color: var(--accent); }
+    header p { margin: 0; font-size: 14px; color: var(--muted); }
+
+    h2 { margin: 0 0 12px; font: 700 22px/1.2 var(--display); letter-spacing: -.3px; text-wrap: balance; }
+    h2 small { display: block; font: 400 15px/1.5 var(--body); color: var(--muted); letter-spacing: 0; margin-top: 4px; }
+    .hint { color: var(--muted); font-size: 14px; margin: 0; }
+    .note { color: var(--caution); font-size: 14px; margin: 0; }
+    .err { color: var(--avoid); margin: 0; }
+
+    form#f { display: grid; gap: 8px; }
+    form#f label { font-weight: 700; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
     input[type=text], textarea {
-      width: 100%; padding: 12px 14px; font: inherit; border: 1px solid var(--border);
-      border-radius: 10px; background: var(--card); color: var(--ink);
+      font: inherit; color: var(--ink); background: var(--surface);
+      border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%;
     }
-    form#f input { flex: 1; }
-    input[type=text]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input[type=text]:focus, textarea:focus { border-color: var(--accent); outline: none; }
+    .row input { flex: 1 1 280px; min-width: 0; font-size: 18px; padding: 14px 16px; }
     button {
-      padding: 12px 18px; font-size: 16px; font-weight: 600; border: 0; cursor: pointer;
-      border-radius: 10px; background: var(--accent); color: #fff;
+      font: 700 16px var(--body); color: var(--accent-ink); background: var(--accent);
+      border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer;
     }
-    button.secondary { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
+    .row button { font-size: 17px; padding: 14px 26px; }
+    button.soft { color: var(--accent); background: var(--accent-soft); }
     button:disabled { opacity: .6; cursor: default; }
-    a { color: var(--accent); }
-    .hint { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
-    .note { color: var(--caution-ink); font-size: 13px; }
-    .err { color: var(--avoid-ink); }
-    .verdict {
-      border-radius: 14px; padding: 18px 18px 18px 22px; margin: 20px 0 16px;
-      border: 1px solid var(--border); position: relative; overflow: hidden;
+
+    /* The answer card. Its colour comes from the band, never from the label text. */
+    .answer { border-radius: 20px; padding: 28px; display: grid; gap: 10px; }
+    .answer.avoid { background: var(--avoid-bg); --tone: var(--avoid); }
+    .answer.caution { background: var(--caution-bg); --tone: var(--caution); }
+    .answer.clear { background: var(--clear-bg); --tone: var(--clear); }
+    .answer.unknown { background: var(--unknown-bg); --tone: var(--unknown); }
+    .tag { justify-self: start; font-weight: 700; font-size: 14px; color: var(--tone); border: 2px solid var(--tone); border-radius: 999px; padding: 2px 14px; }
+    .answer h2 { margin: 0; font-size: clamp(28px, 6vw, 42px); line-height: 1.1; letter-spacing: -.8px; }
+    .answer p { margin: 0; max-width: 60ch; }
+    .answer ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
+    .closeness { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
+    .meter { display: flex; gap: 4px; }
+    .meter i { width: 22px; height: 10px; border-radius: 3px; background: var(--surface); }
+    .meter i.on { background: var(--tone); }
+
+    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .tile { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+    .tile b { font: 800 26px/1 var(--display); }
+    .tile span { font-size: 13px; color: var(--muted); }
+    .tile em { font-style: normal; font-weight: 700; font-size: 14px; margin-top: 6px; }
+    .tiles.avoid { --tone: var(--avoid); } .tiles.caution { --tone: var(--caution); }
+    .tile.listed { border-color: var(--tone); }
+    .tile.listed em { color: var(--tone); }
+    .tile.weak em { color: var(--muted); }
+    .tile.none em { color: var(--clear); }
+    .tile.unchecked em { color: var(--unknown); }
+    .tiles + .hint { margin-top: 10px; }
+
+    ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
+    ol.steps li { counter-increment: step; background: var(--surface); border-radius: 14px; padding: 14px 16px 14px 60px; position: relative; }
+    ol.steps li::before {
+      content: counter(step); position: absolute; left: 16px; top: 12px; width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent); font: 800 16px/30px var(--display); text-align: center;
     }
-    .verdict::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
-    .verdict.avoid   { background: var(--avoid-bg); }   .verdict.avoid::before   { background: var(--avoid-bar); }
-    .verdict.caution { background: var(--caution-bg); } .verdict.caution::before { background: var(--caution-bar); }
-    .verdict.clear   { background: var(--clear-bg); }   .verdict.clear::before   { background: var(--clear-bar); }
-    .verdict.unknown { background: var(--unknown-bg); } .verdict.unknown::before { background: var(--unknown-bar); }
-    .verdict h2 { margin: 0 0 4px; font-size: 20px; }
-    .verdict.avoid h2 { color: var(--avoid-ink); }
-    .verdict.caution h2 { color: var(--caution-ink); }
-    .verdict.clear h2 { color: var(--clear-ink); }
-    .verdict.unknown h2 { color: var(--unknown-ink); }
-    .verdict p { margin: 4px 0 0; font-size: 14px; }
-    .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); vertical-align: middle; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
-    .card h3 { margin: 0 0 8px; font-size: 16px; }
-    .card h4 { margin: 12px 0 4px; font-size: 14px; }
-    dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 2px 12px; margin: 0; font-size: 14px; }
+
+    .why > p { margin: 0 0 12px; }
+    .why > .note { margin-bottom: 12px; }
+    details.more { background: var(--surface); border-radius: 14px; }
+    details.more + details.more { margin-top: 8px; }
+    details.more > summary { cursor: pointer; padding: 14px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    details.more > summary::-webkit-details-marker { display: none; }
+    details.more > summary::after { content: "+"; font: 800 20px/1 var(--display); color: var(--accent); }
+    details.more[open] > summary::after { content: "\2013"; }
+    .det { padding: 0 16px 16px; min-width: 0; }
+    .det > :first-child { margin-top: 0; }
+    ul.claims, ol.claims { margin: 0; padding-left: 20px; }
+    ul.claims li, ol.claims li { margin: 4px 0; }
+    .cite { font-size: 13px; text-decoration: none; background: var(--accent-soft); border-radius: 4px; padding: 0 5px; }
+    dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 4px 16px; margin: 0; font-size: 15px; }
     dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; overflow-wrap: anywhere; }
-    .claims { margin: 0; padding-left: 20px; font-size: 14px; }
-    .cite { font-size: 12px; text-decoration: none; }
+    .det .note, .det .hint { margin-top: 8px; }
+    .tablewrap { overflow-x: auto; }
+    table.lists { width: 100%; border-collapse: collapse; font-size: 15px; margin: 4px 0; }
+    table.lists th, table.lists td { text-align: left; padding: 6px 12px 6px 0; border-top: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    table.lists th { color: var(--muted); font-size: 13px; }
+    table.lists tr:first-child th { border-top: 0; }
+    table.lists tr.group th { color: var(--ink); font-size: 15px; padding-top: 12px; }
+    details.candidate { padding: 8px 0; border-top: 1px solid var(--line); }
+    details.candidate:first-child { border-top: 0; padding-top: 0; }
+    details.candidate summary { cursor: pointer; }
+
+    .proof { border: 2px dashed var(--line); border-radius: 16px; padding: 18px 20px; display: grid; gap: 12px; }
+    .proof h2 { margin: 0; }
+    .proof .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+    .answers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .answers div { border-radius: 14px; padding: 12px; font-size: 14px; }
+    .answers b { display: block; font: 700 17px var(--display); }
+    .answers .avoid { background: var(--avoid-bg); color: var(--avoid); }
+    .answers .caution { background: var(--caution-bg); color: var(--caution); }
+    .answers .clear { background: var(--clear-bg); color: var(--clear); }
+    .answers .unknown { background: var(--unknown-bg); color: var(--unknown); }
+
+    .queue { list-style: none; margin: 0; padding: 4px 16px; background: var(--surface); border-radius: 14px; }
+    .queue li { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+    .queue li:first-child { border-top: 0; }
+    .queue button { padding: 6px 14px; font-size: 14px; }
+    #case { display: grid; gap: 16px; margin-top: 16px; }
+    #case:empty { display: none; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .queue { list-style: none; padding: 0; margin: 0; }
-    .queue li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
-    .queue button { padding: 6px 12px; font-size: 14px; }
-    #rv p { margin: 0 0 8px; }
-    .candidate { margin: 0 0 10px; }
-    .candidate summary { cursor: pointer; font-size: 14px; }
-    table.lists { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 4px; }
-    table.lists th, table.lists td { text-align: left; padding: 4px 8px 4px 0; border-top: 1px solid var(--border); vertical-align: top; overflow-wrap: break-word; }
-    table.lists th { color: var(--muted); font-weight: 600; }
-    table.lists tr.group th { color: var(--ink); padding-top: 10px; border-top: 0; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; }
-    .meta code { font-size: 12px; }
-    footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
+    .panel { background: var(--surface); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+    .panel h3 { margin: 0 0 8px; font: 700 17px var(--display); }
+    #rv { display: grid; gap: 10px; }
+    #rv .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    footer { font-size: 13px; color: var(--muted); }
+
     @media (max-width: 640px) {
+      .tiles { grid-template-columns: repeat(2, 1fr); }
+      .answers { grid-template-columns: repeat(2, 1fr); }
       .grid2 { grid-template-columns: 1fr; }
+      .answer { padding: 20px; }
       dl.kv { grid-template-columns: 110px 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>TradeCheck</h1>
-    <p class="tagline">Sanctions screening across the US, Canada, EU, UK and UN lists &mdash; with the source and date behind every answer.</p>
+    <header>
+      <h1 class="logo">Trade<span>Check</span></h1>
+      <p>Free sanctions check across the Canadian, US, EU, UK and UN lists</p>
+    </header>
 
     <form id="f">
-      <input id="q" type="text" placeholder="e.g. Can we ship to Northwind Metals FZE in Dubai?" autocomplete="off" autofocus />
-      <button id="go" type="submit">Screen</button>
+      <label for="q">Who are you about to trade with?</label>
+      <div class="row">
+        <input id="q" type="text" placeholder="e.g. Can we ship to Northwind Metals FZE in Dubai?" autocomplete="off" autofocus />
+        <button id="go" type="submit">Check this name</button>
+      </div>
+      <p class="hint">Add a country or registration number if you have one. It makes the check sharper.
+        The matcher decides; the model only explains. Missing data shows as <em>Unknown</em>, never green.</p>
     </form>
-    <p class="hint">The matcher decides; the model only explains. Missing data shows as <em>Unknown</em>, never green.</p>
 
     <div id="out" aria-live="polite"></div>
 
-    <section class="card" aria-labelledby="queue-title">
-      <h3 id="queue-title">Review queue</h3>
+    <section aria-labelledby="answers-title">
+      <h2 id="answers-title">The four answers you can get</h2>
+      <div class="answers">
+        <div class="avoid"><b>Avoid</b>Strong match. Stop and get advice.</div>
+        <div class="caution"><b>Caution</b>Close name. Someone checks first.</div>
+        <div class="clear"><b>Clear*</b>No match on the lists we checked.</div>
+        <div class="unknown"><b>Unknown</b>We couldn't check. Not a yes.</div>
+      </div>
+    </section>
+
+    <section aria-labelledby="queue-title">
+      <h2 id="queue-title">Waiting for review</h2>
       <div id="queue"><p class="hint">Loading&hellip;</p></div>
       <div id="case"></div>
     </section>
@@ -123,8 +212,10 @@
     const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${esc(text)}</a>`;
     const num = n => typeof n === "number" ? n.toFixed(2) : "—";
     const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
-    // Card colour and one-line meaning per band. Keyed by band rather than by label, so
-    // renaming a label in tradecheck/layer2.py can't quietly turn the card grey.
+    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+    const auditUrl = id => `/audit/${encodeURIComponent(id)}`;
+    // Card colour per band. Keyed by band rather than by label, so renaming a label in
+    // tradecheck/layer2.py can't quietly turn the card grey.
     const CLASS = { hit: "avoid", review: "caution", clear: "clear", unknown: "unknown" };
     const LINE = {
       hit: "Strong sanctions match.",
@@ -134,6 +225,19 @@
     };
     const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
                       ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
+
+    // The steps under "What to do next". The server's next_step (review and hit only) goes
+    // first; these fixed ones follow. Kept generic on purpose: no legal claims we can't back.
+    const STEPS = {
+      hit: ["Don't ship, sign or take payment while this is open.",
+            "Get advice from a trade lawyer or your bank's compliance team before you go ahead."],
+      review: ["Don't ship or take payment until the review is done.",
+               "Ask your buyer for a registration or licence number, then check again with it. It tells two similar names apart."],
+      clear: ["Keep this record with your deal file. It shows which lists were checked and when.",
+              "Check again before each new shipment or contract. Lists change often."],
+      unknown: ["Try the check again in a few minutes.",
+                "Don't treat this as clear. Wait for a finished check before you go ahead."],
+    };
 
     // Plain names for the OpenSanctions dataset IDs a candidate is listed in, so a first-time
     // user sees "United States · Treasury (OFAC)" instead of "us_ofac_sdn".
@@ -163,6 +267,11 @@
       tw_shtc:                 ["Taiwan", "Board of Foreign Trade", "High-tech export control list", "trade"],
     };
     const GROUPS = [["sanctions", "Sanctions lists"], ["trade", "Trade and contract screening lists"], ["other", "Other lists"]];
+    // The five tiles. The country name must match the first field of DATASETS.
+    const JURISDICTIONS = [["CA", "Canada", "Global Affairs Canada"], ["US", "United States", "Treasury, Commerce, State"],
+                           ["EU", "European Union", "European Commission"], ["UK", "United Kingdom", "Treasury, Foreign Office"],
+                           ["UN", "United Nations", "Security Council"]];
+    const countryOf = id => (DATASETS[id] || [])[0];
 
     // A candidate's datasets as a table, sanctions first. Rows are sorted by country, with the
     // UN first because other lists often copy it. Each list name links to its OpenSanctions
@@ -170,14 +279,14 @@
     function listsHtml(ids) {
       const rows = ids.map(id => { const d = DATASETS[id]; return d ? [id, ...d] : [id, "—", "—", id, "other"]; })
         .sort((a, b) => (b[0] === "un_sc_sanctions") - (a[0] === "un_sc_sanctions") || a[1].localeCompare(b[1]));
-      let html = `<table class="lists"><tr><th>Country or body</th><th>Who publishes it</th><th>List</th></tr>`;
+      let html = `<div class="tablewrap"><table class="lists"><tr><th>Country or body</th><th>Who publishes it</th><th>List</th></tr>`;
       for (const [group, title] of GROUPS) {
         const inGroup = rows.filter(r => r[4] === group);
         if (!inGroup.length) continue;
         html += `<tr class="group"><th colspan="3">${title} (${inGroup.length})</th></tr>` + inGroup.map(([id, where, who, what]) =>
           `<tr><td>${esc(where)}</td><td>${esc(who)}</td><td>${link("https://www.opensanctions.org/datasets/" + encodeURIComponent(id) + "/", what)}</td></tr>`).join("");
       }
-      html += "</table>";
+      html += "</table></div>";
       if (ids.includes("un_sc_sanctions") && ids.length > 1) {
         html += `<p class="hint">Many countries copy UN listings into their own lists, so several rows can come from one UN decision.</p>`;
       }
@@ -185,12 +294,15 @@
     }
 
     // One matcher candidate: name, score and how many lists, with the table behind a click.
-    // The top candidate starts open.
     function candidateHtml(c, open) {
       const n = c.datasets.length;
       return `<details class="candidate"${open ? " open" : ""}><summary>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)}
-          · score ${num(c.score)} · on ${n} list${n === 1 ? "" : "s"}</summary>${n ? listsHtml(c.datasets) : ""}</details>`;
+          · score ${num(c.score)} · on ${plural(n, "list")}</summary>${n ? listsHtml(c.datasets) : ""}</details>`;
     }
+
+    // One section of "Why we think so", closed unless open is set.
+    const more = (title, body, open) =>
+      `<details class="more"${open ? " open" : ""}><summary>${title}</summary><div class="det">${body}</div></details>`;
 
     // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
     // detail (a validation error lists each field), so callers can show it as is.
@@ -205,42 +317,45 @@
       return data;
     }
 
-    // One list item per claim. Each citation becomes a numbered link to its entry in Sources.
-    function claimsHtml(claims, sources) {
+    // Each citation becomes a numbered link to its source. The numbers match the source list
+    // in "Proof for your records".
+    function citesHtml(claim, sources) {
       const index = Object.fromEntries(sources.map((s, i) => [s.key, i]));
-      return claims.map(c => `<li>${esc(c.text)}${(c.cites || []).map(key => {
+      return `${esc(claim.text)}${(claim.cites || []).map(key => {
         const s = sources[index[key]];
-        return s ? ` <a class="cite" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" title="${esc(s.label)}">[${index[key] + 1}]</a>` : "";
-      }).join("")}</li>`).join("");
+        return s ? ` <a class="cite" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" title="${esc(s.label)}">${index[key] + 1}</a>` : "";
+      }).join("")}`;
     }
+    const claimsHtml = (claims, sources) => `<ul class="claims">${claims.map(c => `<li>${citesHtml(c, sources)}</li>`).join("")}</ul>`;
+    const sourcesHtml = sources => sources.length
+      ? `<ol class="claims">${sources.map(s => `<li>${link(s.url, s.label)}</li>`).join("")}</ol>` : "";
 
-    // The report card: summary, the five sections, next step and sources. Used both for a
-    // fresh result and for a case opened from the queue.
+    // The report: its summary, a note if it failed its checks, then one section per report
+    // part. The first part with something in it starts open. Used for a fresh result and
+    // for a case opened from the queue.
     function reportHtml(rep) {
       const sources = rep.sources || [];
-      let html = `<div class="card"><h3>Report</h3><ul class="claims">${claimsHtml([rep.summary], sources)}</ul>`;
-      for (const [key, title] of SECTIONS) {
-        const claims = (rep.sections || {})[key] || [];
-        if (key === "news" && (rep.steps || {}).news === "unavailable") {
-          html += `<h4>${title}</h4><p class="hint">News search unavailable.</p>`;
-        } else if (claims.length) {
-          html += `<h4>${title}</h4><ul class="claims">${claimsHtml(claims, sources)}</ul>`;
-        }
-      }
-      if (rep.next_step) html += `<p><strong>Next step:</strong> ${esc(rep.next_step)}</p>`;
+      let html = rep.summary ? `<p>${citesHtml(rep.summary, sources)}</p>` : "";
       if (rep.check === "error") {
         html += `<p class="note">Building the report failed (${esc(rep.check_reason)}). The result above still stands.</p>`;
       }
       if (rep.check === "template") {
         html += `<p class="note">The model's report didn't pass its checks (${esc(rep.check_reason)}), so code wrote this report from the evidence.</p>`;
       }
-      if (sources.length) {
-        html += `<h4>Sources</h4><ol class="claims">${sources.map(s => `<li>${link(s.url, s.label)}</li>`).join("")}</ol>`;
+      let first = true;
+      for (const [key, title] of SECTIONS) {
+        const claims = (rep.sections || {})[key] || [];
+        if (key === "news" && (rep.steps || {}).news === "unavailable") {
+          html += more(title, `<p class="hint">News search unavailable.</p>`);
+        } else if (claims.length) {
+          html += more(title, claimsHtml(claims, sources), first);
+          first = false;
+        }
       }
-      return html + "</div>";
+      return html;
     }
 
-    // "What we screened": the extracted fields, with a note when they didn't come from the model.
+    // The fields we screened, with a note when they didn't come from the model.
     function fieldsHtml(p) {
       const rows = [["Type", p.schema], ["Name", p.name], ["Country", p.country], ["Birth date", p.birth_date],
                     ["Registration no.", p.registration_number]].filter(([, v]) => v);
@@ -254,32 +369,101 @@
       return html;
     }
 
+    // The big plain sentence at the top of the answer card.
+    function headline(res) {
+      const n = res.candidates.length ? res.candidates[0].datasets.length : 0;
+      if (res.band === "hit") return n ? `Stop. This name matches one on ${plural(n, "list")}.` : "Stop. This name is a strong sanctions match.";
+      if (res.band === "review") return n ? `Hold off for now. A very similar name is on ${plural(n, "list")}.` : "Hold off for now. A reviewer needs to check this name.";
+      if (res.band === "clear") return "No match on the lists we checked.";
+      return "We couldn't finish the check. Treat this as not clear.";
+    }
+
+    // Closeness as five blocks, plus the cutoffs the server used.
+    function closenessHtml(res) {
+      if (typeof res.score !== "number") return "";
+      const on = Math.round(Math.min(Math.max(res.score, 0), 1) * 5);
+      const cut = res.cutoffs ? ` Clear below ${num(res.cutoffs.clear_below)}, a match at ${num(res.cutoffs.hit_at)}.` : "";
+      return `<div class="closeness"><span class="meter" aria-hidden="true">${"<i class='on'></i>".repeat(on)}${"<i></i>".repeat(5 - on)}</span>
+          Name closeness ${num(res.score)} out of 1.${cut}</div>`;
+    }
+
+    // The five tiles. A tile names the top candidate's listing first; a weaker candidate on
+    // that country's lists still shows, so "No close name" is only said when it's true.
+    function tilesHtml(res) {
+      const [top, ...rest] = res.candidates;
+      const on = (c, country) => c.datasets.some(id => countryOf(id) === country);
+      const tiles = JURISDICTIONS.map(([code, country, who]) => {
+        let cls = "none", text = res.band === "clear" ? "No match" : "No close name";
+        if (res.band === "unknown") [cls, text] = ["unchecked", "Not checked"];
+        else if (top && on(top, country)) [cls, text] = ["listed", res.band === "hit" ? "Listed" : "Similar name listed"];
+        else if (rest.some(c => on(c, country))) [cls, text] = ["weak", "Weaker match listed"];
+        return `<div class="tile ${cls}"><b>${code}</b><span>${who}</span><em>${text}</em></div>`;
+      }).join("");
+      const five = new Set(JURISDICTIONS.map(j => j[1]));
+      const others = top ? top.datasets.filter(id => !five.has(countryOf(id))).length : 0;
+      const extra = others ? ` The top match is also on ${plural(others, "other list")}, shown under "Why we think so".` : "";
+      return `<div class="tiles ${CLASS[res.band] || "unknown"}">${tiles}</div><p class="hint">${datesText(res)}${extra}</p>`;
+    }
+
+    // No data date (Unknown, a replayed result, or the catalog didn't say): say so rather
+    // than "as of unknown".
+    function datesText(res) {
+      const as = res.as_of ? `Sanctions data as of ${esc(res.as_of)}.` : "No live sanctions data date for this result.";
+      return `${as} UN list from ${esc(res.un_check.list_date || "not loaded")}.`;
+    }
+
     // The whole result for one screen (the POST /screen response).
     function render(res) {
-      const un = res.un_check;
-      let html = `<div class="verdict ${CLASS[res.band] || "unknown"}">
-          <h2>${esc(res.label)}${res.status === "unknown" ? "" : ` <span class="badge">${esc(res.status.replace("_", " "))}</span>`}</h2>
-          <p>${esc(LINE[res.band])} Score: ${num(res.score)}.</p>
-          <p class="hint">${res.reasons.map(esc).join(" · ")}</p>
-        </div>`;
-      if (!res.live && res.fetched_at) {
-        html += `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>`;
+      const un = res.un_check, rep = res.report || {}, top = res.candidates[0];
+      const status = res.status === "unknown" ? "" : ` · ${esc(res.status.replace("_", " "))}`;
+      let answer = `<section class="answer ${CLASS[res.band] || "unknown"}" aria-label="Result">
+          <span class="tag">${esc(res.label)}${status}</span>
+          <h2>${esc(headline(res))}</h2>
+          <p>${top ? `The closest name we found is "${esc(top.caption)}". ` : ""}${esc(LINE[res.band])}</p>
+          ${closenessHtml(res)}
+          ${res.reasons.length ? `<ul>${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+          ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
+        </section>`;
+
+      const lists = `<section><h2>The lists we checked<small>Canada and the four lists Canadian exporters are most often asked about</small></h2>${tilesHtml(res)}</section>`;
+
+      const steps = [rep.next_step, ...(STEPS[res.band] || [])].filter(Boolean);
+      const next = `<section><h2>What to do next</h2><ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
+
+      // The fields start open when they weren't extracted by the model, since that changes
+      // what was actually screened.
+      let why = more("What we screened", fieldsHtml(res.parsed), res.parsed.source !== "model") + reportHtml(rep);
+      if (top) {
+        why += more(`Every list the top match is on (${top.datasets.length})`, top.datasets.length ? listsHtml(top.datasets) : `<p class="hint">No lists recorded.</p>`);
       }
-      html += `<div class="card"><h3>What we screened</h3>${fieldsHtml(res.parsed)}</div>`;
-      if (res.candidates.length) {
-        html += `<div class="card"><h3>Matcher candidates</h3>${res.candidates.map((c, i) => candidateHtml(c, i === 0)).join("")}</div>`;
+      if (res.candidates.length > 1) {
+        why += more(`Other names that came close (${res.candidates.length - 1})`, res.candidates.slice(1).map(c => candidateHtml(c, false)).join(""));
       }
-      html += `<div class="card"><h3>UN cross-check: ${esc(un.status)}</h3><p class="hint">${esc(cap(un.reason))}.${
-        un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p></div>`;
-      html += reportHtml(res.report);
-      // No data date (Unknown, a replayed result, or the catalog didn't say): show only the
-      // checked-at time rather than "as of unknown".
-      const asOf = res.as_of ? `Sanctions data as of <code>${esc(res.as_of)}</code> · ` : "";
-      html += `<div class="meta">
-          ${asOf}UN list from <code>${esc(un.list_date || "not loaded")}</code><br>
-          Checked at <code>${esc(res.checked_at)}</code> · <a href="/audit/${encodeURIComponent(res.screen_id)}" target="_blank" rel="noopener">View audit record</a><br>
-          ${esc(res.disclaimer)}</div>`;
-      $("out").innerHTML = html;
+      why += more(`UN cross-check: ${esc(un.status)}`, `<p class="hint">${esc(cap(un.reason))}.${
+        un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p>`);
+
+      const proof = `<section class="proof" aria-labelledby="proof-title">
+          <h2 id="proof-title">Proof for your records<small>Show this to your bank or insurer. It says which lists, which date, and what matched.</small></h2>
+          <dl class="kv">
+            <dt>Checked at</dt><dd>${esc(res.checked_at)}</dd>
+            <dt>Data dates</dt><dd>${datesText(res)}</dd>
+            <dt>Record</dt><dd>${esc(res.screen_id)}</dd>
+          </dl>
+          ${(rep.sources || []).length ? `<div><strong>Sources</strong>${sourcesHtml(rep.sources)}</div>` : ""}
+          <div class="actions">
+            <button class="soft" type="button" id="copy">Copy record link</button>
+            <a href="${auditUrl(res.screen_id)}" target="_blank" rel="noopener">View full audit record</a>
+            <span id="copied" class="hint"></span>
+          </div>
+          <p class="hint">${esc(res.disclaimer)}</p>
+        </section>`;
+
+      $("out").innerHTML = answer + lists + next + `<section class="why"><h2>Why we think so</h2>${why}</section>` + proof;
+      $("copy").addEventListener("click", () => {
+        const url = location.origin + auditUrl(res.screen_id);
+        navigator.clipboard.writeText(url).then(() => { $("copied").textContent = "Copied"; },
+          () => { $("copied").textContent = url; });  // no clipboard access: show the link to copy by hand
+      });
     }
 
     // Refresh the review queue panel. Runs on page load and after every screen or decision.
@@ -288,7 +472,7 @@
         const items = await api("/queue");
         $("queue").innerHTML = items.length
           ? `<ul class="queue">${items.map(i => `<li><span>${esc(i.question)} · score ${num(i.score)}</span>
-               <button class="secondary" type="button" data-id="${esc(i.screen_id)}">Open</button></li>`).join("")}</ul>`
+               <button class="soft" type="button" data-id="${esc(i.screen_id)}">Review</button></li>`).join("")}</ul>`
           : `<p class="hint">No cases waiting for review.</p>`;
       } catch (err) {
         $("queue").innerHTML = `<p class="err">Couldn't load the queue: ${esc(err.message)}</p>`;
@@ -299,26 +483,31 @@
     // report, and the decision buttons.
     async function openCase(id) {
       const ev = {};  // the screen's events by step
-      for (const e of await api(`/audit/${encodeURIComponent(id)}`)) ev[e.step] = e.data;
+      for (const e of await api(auditUrl(id))) ev[e.step] = e.data;
       const top = (ev.layer1.candidates || [])[0];
       const topHtml = top
         ? `<dl class="kv"><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
-             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Listed on</dt><dd>${top.datasets.length} list${top.datasets.length === 1 ? "" : "s"}</dd></dl>
+             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Listed on</dt><dd>${plural(top.datasets.length, "list")}</dd></dl>
            ${top.datasets.length ? listsHtml(top.datasets) : ""}`
         : `<p class="hint">The matcher returned no candidate.</p>`;
       $("case").innerHTML = `
         <div class="grid2">
-          <div class="card"><h3>The query</h3>${fieldsHtml(ev.input.parsed)}</div>
-          <div class="card"><h3>Top candidate</h3>${topHtml}</div>
+          <div class="panel"><h3>The query</h3>${fieldsHtml(ev.input.parsed)}</div>
+          <div class="panel"><h3>Top candidate</h3>${topHtml}</div>
         </div>
         <p class="hint">In review because: ${ev.layer2.reasons.map(esc).join(" · ")}</p>
-        ${ev.layer3 ? reportHtml(ev.layer3) : ""}
-        <div id="rv" class="card">
+        ${ev.layer3 ? `<div class="why">${reportHtml(ev.layer3)}${(ev.layer3.sources || []).length
+          ? more("Sources", sourcesHtml(ev.layer3.sources)) : ""}</div>` : ""}
+        <div id="rv" class="panel">
           <h3>Decision</h3>
-          <p><input id="reviewer" type="text" placeholder="Your name" /></p>
-          <p><textarea id="note" rows="3" placeholder="Why? e.g. different date of birth"></textarea></p>
-          <button type="button" data-decision="confirm">Confirm match</button>
-          <button type="button" class="secondary" data-decision="dismiss">Dismiss as false positive</button>
+          <label for="reviewer" class="hint">Your name</label>
+          <input id="reviewer" type="text" />
+          <label for="note" class="hint">Why? e.g. different date of birth</label>
+          <textarea id="note" rows="3"></textarea>
+          <div class="buttons">
+            <button type="button" data-decision="confirm">Confirm match</button>
+            <button type="button" class="soft" data-decision="dismiss">Dismiss as false positive</button>
+          </div>
           <p id="rvmsg" class="hint"></p>
         </div>`;
       // Plain buttons, not a form: Enter in a field must never submit an irreversible decision.
@@ -330,7 +519,7 @@
             decision, note: $("note").value, reviewer: $("reviewer").value,
           });
           $("case").innerHTML = `<p class="hint">Recorded: ${esc(res.decision)}, status ${esc(res.status)}.
-            <a href="/audit/${encodeURIComponent(id)}" target="_blank" rel="noopener">View audit record</a></p>`;
+            <a href="${auditUrl(id)}" target="_blank" rel="noopener">View audit record</a></p>`;
           loadQueue();
         } catch (err) {
           $("rvmsg").innerHTML = `<span class="err">${esc(err.message)}</span>`;
@@ -338,7 +527,7 @@
       });
     }
 
-    // One listener for the whole queue: each Open button carries its screen ID.
+    // One listener for the whole queue: each Review button carries its screen ID.
     $("queue").addEventListener("click", e => {
       const id = e.target.dataset && e.target.dataset.id;
       if (id) openCase(id).catch(err => { $("case").innerHTML = `<p class="err">${esc(err.message)}</p>`; });
@@ -350,7 +539,7 @@
       const question = $("q").value.trim();
       if (!question) return;
       $("go").disabled = true;
-      $("out").innerHTML = "<p class='hint'>Screening&hellip; a review or hit case can take up to a minute while the report is written.</p>";
+      $("out").innerHTML = "<p class='hint'>Checking&hellip; a review or hit case can take up to a minute while the report is written.</p>";
       try {
         render(await api("/screen", { question }));
         loadQueue();
