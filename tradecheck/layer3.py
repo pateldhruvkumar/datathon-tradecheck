@@ -16,7 +16,7 @@ import requests
 
 from tradecheck import http, layer1_un, layer1_yente
 
-PROMPT_VERSION = "report-v2"
+PROMPT_VERSION = "report-v3"
 MAX_RETRIES = 3   # after the first attempt, so at most 4 model calls
 DEADLINE_S = 60   # no new attempt starts after this
 TAVILY_URL = "https://api.tavily.com/search"
@@ -31,19 +31,30 @@ NEXT_STEP = {
 SYSTEM = """You write the evidence report for one sanctions screening result.
 The matcher has already decided the band. You explain the evidence; you never judge it.
 Rules:
-- Use only the evidence bundle. No outside knowledge.
-- Every claim cites at least one bundle key in "cites", copied exactly.
+- Use only the evidence bundle. No outside knowledge, not even to make a sentence fuller.
+- Every claim cites at least one bundle key in "cites", copied exactly. Cite only the keys whose evidence shows that claim.
 - State facts and differences only. No verdicts, no recommendations, no legal advice.
+- Say each fact once in the whole report. A fact that belongs to one section stays out of the others.
+- Write each claim as one full, plain sentence for a compliance reviewer. Join related facts in one sentence
+  instead of splitting them, for example a name with its aliases, or a birth date with the birthplace and nationality.
+- Never use matcher feature names such as name_literal_match. Say in plain words what they found.
 Sections:
-- summary: one or two sentences on who matched and how strongly.
-- who_matched: who the listed party is (names, aliases, birth date, country).
-- why_it_matched: which details of the query agree with the listing.
-- differences: details of the query that differ from the listing or are missing from it.
-- sanctions: programs, authorities and dates.
-- news: one claim per relevant article, citing its URL.
+- summary: one sentence on who matched, how strongly (give the score) and how many authorities list them.
+  No role, aliases or reference numbers.
+- who_matched: who the listed party is: names and aliases; birth date, birthplace and nationality;
+  gender, title and position; addresses; ID and passport numbers; role and the listing's notes.
+  No scores and no match reasons.
+- why_it_matched: one claim per detail of the query that agrees with the listing, in plain words,
+  citing the record that shows it. When the UN record has the same name, give it its own claim citing
+  the UN key. No score; the summary gives it.
+- differences: each detail of the query that contradicts the listing, and each detail the listing holds
+  that the query lacks. Name those details, but don't repeat their values from who_matched.
+- sanctions: one claim per main authority with whichever of these the bundle has: program, measures
+  (such as asset freeze, travel ban, blocking), legal basis, reference number, listing date, last change
+  and status. Put the lists that only implement the UN regime together in one claim.
+- news: one claim per relevant article, citing its URL, saying what the article reports.
 Leave a section empty when the bundle has nothing for it.
-Keep the report short enough to read aloud: at most 5 claims per section, one sentence each.
-In sanctions, group the entries by authority or program instead of one claim per entry."""
+At most 8 claims per section."""
 
 _CLAIM = {
     "type": "object",
@@ -65,6 +76,38 @@ _COMPARE = {"country": ("country", "nationality", "citizenship"), "birthDate": (
             "jurisdiction": ("jurisdiction", "country"), "registrationNumber": ("registrationNumber",)}
 _LABELS = {"country": "country", "birthDate": "birth date", "jurisdiction": "jurisdiction",
            "registrationNumber": "registration number"}
+# The identity lines of the template's who_matched, one line per group, each joining the
+# properties the record has, e.g. "Born: 1973-08-20; birthplace: Bunia; nationality: cd."
+_IDENTITY = (
+    (("birthDate", "born"), ("birthPlace", "birthplace"), ("nationality", "nationality"), ("country", "country")),
+    (("gender", "gender"), ("title", "title"), ("position", "position")),
+    (("address", "address"),),
+    (("idNumber", "ID number"), ("passportNumber", "passport number"),
+     ("registrationNumber", "registration number"), ("jurisdiction", "jurisdiction")),
+    (("notes", "notes"),),
+)
+# The listing details a name-only query can't be checked against, named in differences.
+_UNCHECKED = (("birthDate", "birth date"), ("birthPlace", "birthplace"), ("nationality", "nationality"),
+              ("country", "country"), ("address", "address"), ("idNumber", "ID number"),
+              ("passportNumber", "passport number"), ("registrationNumber", "registration number"))
+# The matcher's features in plain words, for a reader who has never seen the matcher.
+# A feature not listed here keeps the raw line, e.g. "Matcher check x scored 0.80."
+# ponytail: hand-written for the features seen so far; add a line when a new one shows up.
+_PLAIN = {
+    "name_literal_match": "The name you gave is the same as a listed name, letter for letter",
+    "person_name_jaro_winkler": "The name you gave is spelled very close to a listed name",
+    "person_name_phonetic_match": "The name you gave sounds the same as a listed name",
+    "name_fingerprint_levenshtein": "The name you gave matches a listed name once word order and small spelling differences are set aside",
+    "weak_alias_match": "The name you gave matches a weak alias on the listing",
+    "identifier_match": "An identifier you gave matches one on the listing",
+    "address_entity_match": "The address you gave matches the listed address",
+    "last_name_mismatch": "The last name you gave differs from the listed last name",
+    "gender_mismatch": "The gender you gave differs from the listed gender",
+}
+# Penalties about a detail the user gave. _field_differences already writes a line for that
+# detail with both values, so the penalty line would only say the same thing again.
+_PENALTY_FIELD = {"country_mismatch": "country", "dob_year_disjoint": "birthDate",
+                  "dob_day_disjoint": "birthDate", "orgid_disjoint": "registrationNumber"}
 
 
 def report(query: dict, match: dict, un: dict, band: dict) -> dict:
@@ -251,43 +294,49 @@ def check_citations(out, bundle: dict) -> list[str]:
 
 
 def template(query: dict, bundle: dict, top_id: str) -> dict:
-    """The report written by code from the bundle alone. Every claim cites its own
-    keys, so it always passes check_citations."""
+    """The report written by code from the bundle alone. It follows the same section rules
+    as the model (each fact once, plain words), and every claim cites its own keys, so it
+    always passes check_citations."""
     c = bundle[top_id]
     p = c["properties"]
     cite = [top_id]  # most lines are about the candidate, so they cite it
-    datasets = ", ".join(c["datasets"]) or "no named dataset"
-    summary = _claim(f"{c['caption']} ({c['schema']}) matched with score {c['score']:.2f}; listed in {datasets}.", cite)
+    n = len(c["datasets"])
+    summary = _claim(f"{c['caption']} ({c['schema']}) matched with score {c['score']:.2f} "
+                     f"and is on {n} list{'' if n == 1 else 's'}.", cite)
 
-    # who_matched: the listed names and identifying details.
-    who = [_claim(f"Listed as {c['caption']} ({c['schema']}).", cite)]
+    # who_matched: the names with their aliases in one line, then one line per group of
+    # identifying details the record has.
     aliases = [a for a in dict.fromkeys(p.get("alias", []) + p.get("weakAlias", [])) if a != c["caption"]]
-    if aliases:
-        who.append(_claim("Also known as: " + ", ".join(aliases[:10]) + ".", cite))
-    for prop, label in (("birthDate", "Born"), ("nationality", "Nationality"), ("country", "Country"),
-                        ("jurisdiction", "Jurisdiction"), ("registrationNumber", "Registration number")):
-        if p.get(prop):
-            who.append(_claim(f"{label}: {', '.join(p[prop])}.", cite))
+    also = f", also known as {', '.join(aliases[:10])}" if aliases else ""
+    who = [_claim(f"Listed as {c['caption']} ({c['schema']}){also}.", cite)]
+    for group in _IDENTITY:
+        parts = [f"{label}: {', '.join(p[prop])}" for prop, label in group if p.get(prop)]
+        if parts:
+            line = "; ".join(parts).rstrip(".")
+            who.append(_claim(line[0].upper() + line[1:] + ".", cite))
 
-    # why_it_matched and differences: the matcher's own features that fired, split into the
-    # ones that count for the match and the penalties, plus each detail the user gave that
-    # the listing lacks or contradicts.
+    # why_it_matched: the matcher's features that count for the match, in plain words, then
+    # the UN record's name as a second, independent source.
+    # differences: the penalties, plus each detail the user gave that the listing lacks or
+    # contradicts. A penalty about such a detail is left out, since that detail's own line
+    # already gives both values.
     features = [(name, r) for name, r in c["explanations"].items() if isinstance(r, dict) and (r.get("score") or 0) > 0]
-    why = [_claim(_feature_line("Matcher feature", name, r), cite) for name, r in features if not _penalty(name)]
-    why = why or [_claim(f"Overall match score {c['score']:.2f}.", cite)]
-    differences = [_claim(_feature_line("Matcher penalty", name, r), cite) for name, r in features if _penalty(name)]
+    why = [_claim(_feature_line(name, r), cite) for name, r in features if not _penalty(name)]
+    why += [_claim(_un_line(item), [key]) for key, item in bundle.items() if item["kind"] == "un"]
+    why = why or [_claim(f"The name you gave was compared with the listed names of {c['caption']}.", cite)]
+    differences = [_claim(_feature_line(name, r), cite) for name, r in features
+                   if _penalty(name) and _PENALTY_FIELD.get(name) not in query["properties"]]
     differences += _field_differences(query, p, cite)
     if not differences:
         differences = [_claim("The details you gave agree with the listing." if len(query["properties"]) > 1
-                              else "Only a name was given, so no other details could be compared.", cite)]
+                              else _name_only_line(p), cite)]
 
     # sanctions and news: one line per bundle item, each citing only itself.
     sanctions = [_claim(_sanction_line(item), [key]) for key, item in bundle.items() if item["kind"] == "sanction"]
-    sanctions += [_claim(f"UN Security Council list entry {item['ref']} ({item['list_type']}), listed "
-                         f"{item['listed_on']}: matched {item['matched_name']} ({item['quality']}, "
-                         f"score {item['score']:.2f}).", [key])
+    sanctions += [_claim(f"UN Security Council list entry {item['ref']} ({item['list_type']}), "
+                         f"listed {item['listed_on']}.", [key])
                   for key, item in bundle.items() if item["kind"] == "un"]
-    sanctions = sanctions or [_claim(f"Listed in: {datasets}.", cite)]
+    sanctions = sanctions or [_claim(f"Listed in: {', '.join(c['datasets']) or 'no named dataset'}.", cite)]
     news = [_claim(f"{item['title'] or item['url']} ({item['published_date'] or 'undated'}).", [key])
             for key, item in bundle.items() if item["kind"] == "news"]
     return {"summary": summary, "who_matched": who, "why_it_matched": why,
@@ -304,10 +353,28 @@ def _penalty(feature: str) -> bool:
     return any(word in feature for word in _PENALTY_WORDS)
 
 
-def _feature_line(prefix: str, name: str, result: dict) -> str:
-    """One matcher feature as a sentence, e.g. "Matcher feature name_literal_match scored 1.00"."""
+def _feature_line(name: str, result: dict) -> str:
+    """One matcher feature as a sentence, in plain words when we know the feature."""
+    if name in _PLAIN:
+        return _PLAIN[name] + "."
     detail = f": {result['detail']}" if result.get("detail") else ""
-    return f"{prefix} {name} scored {result['score']:.2f}{detail}."
+    return f"Matcher check {name} scored {result['score']:.2f}{detail}."
+
+
+def _un_line(item: dict) -> str:
+    """The UN check's best name as a sentence, saying whether it is the main name or an alias."""
+    kind = "its main name" if item["quality"] == "primary" else f"an alias ({item['quality']} quality)"
+    return (f"The UN Security Council list has {item['matched_name']} as {kind} under entry {item['ref']}, "
+            f"which the UN check scored {item['score']:.2f} against the name you gave.")
+
+
+def _name_only_line(listed: dict) -> str:
+    """The differences line when only a name was given: which listing details went unchecked."""
+    held = [label for prop, label in _UNCHECKED if listed.get(prop)]
+    if not held:
+        return "Only a name was given, and the listing holds no other details to compare."
+    named = held[0] if len(held) == 1 else ", ".join(held[:-1]) + " and " + held[-1]
+    return f"Only a name was given, so the listing's {named} could not be checked against it."
 
 
 def _field_differences(query: dict, listed: dict, cite: list[str]) -> list[dict]:
@@ -326,11 +393,16 @@ def _field_differences(query: dict, listed: dict, cite: list[str]) -> list[dict]
 
 
 def _sanction_line(item: dict) -> str:
-    """One sanction entry as a sentence: program, then authority and start date when known."""
+    """One sanction entry as a sentence: program, authority and start date, then whichever
+    of the measures, reference numbers, listing date, status and reason the entry has."""
     p = item["properties"]
     line = item["label"]
     if p.get("authority"):
         line += " by " + ", ".join(p["authority"])
     if p.get("startDate"):
         line += " since " + ", ".join(p["startDate"])
-    return line + "."
+    refs = list(dict.fromkeys(p.get("authorityId", []) + p.get("unscId", [])))
+    extras = [f"{label}: {', '.join(values)}" for label, values in (
+        ("measures", p.get("provisions")), ("reference", refs), ("listed", p.get("listingDate")),
+        ("ends", p.get("endDate")), ("status", p.get("status")), ("reason", p.get("reason"))) if values]
+    return "; ".join([line, *extras]).rstrip(".") + "."
