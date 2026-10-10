@@ -402,7 +402,24 @@
     #rv .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
     #rv .primary { min-height: 0; padding: 10px 18px; font-size: 16px; }
 
+    .kind { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--unknown-wash); color: var(--unknown); }
+    .kind.sanction { background: var(--avoid-wash); color: var(--avoid); }
+    .kind.trade { background: var(--review-wash); color: var(--review); }
+    .kind.pep { background: var(--iris-wash); color: var(--iris); }
+    .kind.security { background: #e8ecf8; color: #2f3f8f; }
+    .kindrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .kindline { font-size: 18px; font-weight: 500; margin: 0 0 12px; max-width: 60ch; }
+    ul.kinds { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    ul.kinds li { display: grid; grid-template-columns: 250px 1fr; gap: 6px 14px; align-items: baseline; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 16px; font-size: 15px; }
+    .record .scope { margin: 10px 0 0; font-size: 15px; color: var(--soft); max-width: 52ch; }
+    .unavail { background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 20px 22px; box-shadow: var(--shadow); }
+    .unavail .mhead { margin: 0 0 8px; }
+    .unavail .mhead.sub { font-size: 18px; margin: 18px 0 4px; }
+    .unavail p { margin: 0 0 10px; max-width: 70ch; }
+    .unavail .src { margin-top: 8px; }
+
     @media (max-width: 800px) {
+      ul.kinds li { grid-template-columns: 1fr; }
       .vtrack .list .meta { display: none; }
       .vtrack .list .lbl { font-size: 12px; }
       .vtrack .list .state { font-size: 11px; }
@@ -572,7 +589,7 @@
       Avoid:   { cls: "avoid",   sub: "ON A LIST",      line: "Strong match on a sanctions list. Stop and get advice before you go ahead." },
       Caution: { cls: "review",  sub: "CHECK DETAILS",  line: "A close name is on a list. Someone should check it before you go ahead." },
       Clear:   { cls: "clear",   sub: "GOOD TO GO",     line: "Good to go. This name isn’t on any sanctions list we checked. That covers these lists only, as of the dates shown." },
-      Unknown: { cls: "unknown", sub: "NOT CHECKED",    line: "We couldn’t finish the check, so this is not a clear result. Try again in a few minutes." },
+      Unknown: { cls: "unknown", sub: "NOT CHECKED",    line: "We couldn’t finish the check, so this is not a clear result." },
     };
     const verdictOf = res => NAME[res.band] || "Unknown";
     const CUTOFFS = { clear_below: 0.70, hit_at: 0.90 };  // used only if the server omits res.cutoffs
@@ -590,6 +607,47 @@
       unknown: ["Try the check again in a few minutes.",
                 "Don't treat this as clear. Wait for a finished check before you go ahead."],
     };
+    // What a record is about, in plain words. OpenSanctions "topics" are matched by prefix;
+    // a topic not listed here is ignored rather than guessed at.
+    const KINDS = [
+      { key: "sanction", re: /^(sanction|asset\.frozen)/, label: "Sanctions", phrase: "sanctioned parties",
+        text: "On a government sanctions list. Dealing with them can be illegal, so stop and get advice." },
+      { key: "trade", re: /^(export\.control|debarment)/, label: "Trade restrictions", phrase: "parties under trade restrictions",
+        text: "Barred or restricted by a government from exports, contracts or dealings." },
+      { key: "pep", re: /^role\.(pep|pol|oligarch|judge|civil|diplo|gov)/, label: "Politically exposed person (PEP)", phrase: "politically exposed persons (PEPs)",
+        text: "Holds or held a senior public role. This is not a sanction, but banks and insurers expect extra care." },
+      { key: "pep", re: /^role\.rca/, label: "Close to a PEP", phrase: "relatives or close associates of PEPs",
+        text: "A relative or close associate of a politically exposed person. Not a sanction, but it may need extra checks." },
+      { key: "security", re: /^(crime|wanted|poi|reg\.)/, label: "Security interest", phrase: "individuals of security interest",
+        text: "Linked to crime, terrorism or a security or law-enforcement case, or flagged by a regulator." },
+    ];
+    const kindsOf = topics => KINDS.filter(k => (topics || []).some(t => k.re.test(t)));
+    const joinWords = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+    const SCOPE = "We look for sanctioned parties, politically exposed persons (PEPs) and individuals of security interest.";
+
+    // Why a check could not finish, from the matcher's error text, in words a business owner
+    // can act on. 402 is the one that was hit in practice: the API account is out of credits.
+    function unavailable(err) {
+      const code = (/HTTP (\d{3})/.exec(err || "") || [])[1];
+      if (code === "402") return { cause: "The sanctions matching service (OpenSanctions) has run out of API credits, so new names can’t be checked right now. This is a service problem, not a result about this name.",
+        fix: "Ask whoever runs TradeCheck to add credits to the OpenSanctions account (or switch to a new API key), then check again." };
+      if (code === "401" || code === "403") return { cause: `The sanctions matching service refused our API key (HTTP ${code}), so this name couldn’t be checked.`,
+        fix: "Ask whoever runs TradeCheck to check the OpenSanctions API key in the .env file." };
+      if (code === "429") return { cause: "The sanctions matching service is limiting requests right now (HTTP 429).",
+        fix: "Wait a minute and check again." };
+      if (code) return { cause: `The sanctions matching service answered with an error (HTTP ${code}).`, fix: "Try again in a few minutes." };
+      if (err) return { cause: "We couldn’t reach the sanctions matching service. It may be down, or the connection may be blocked.", fix: "Try again in a few minutes." };
+      return { cause: "The live check didn’t finish.", fix: "Try again in a few minutes." };
+    }
+    // Official search pages, so a person can check by hand while the live check is down.
+    const MANUAL = [
+      ["Canada: consolidated list", "https://www.international.gc.ca/world-monde/international_relations-relations_internationales/sanctions/consolidated-consolide.aspx?lang=eng"],
+      ["US: OFAC sanctions search", "https://sanctionssearch.ofac.treas.gov/"],
+      ["EU: sanctions map", "https://www.sanctionsmap.eu/"],
+      ["UK: sanctions list search", "https://sanctionslist.fcdo.gov.uk/"],
+      ["UN: consolidated list", "https://scsanctions.un.org/search/"],
+    ];
+
     const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
                       ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
 
@@ -723,7 +781,11 @@
       const out = {};
       for (const l of LISTS) {
         let st = { cls: "ok", text: res.band === "clear" ? "No match" : "No close name" };
-        if (res.band === "unknown") st = { cls: "", text: "Not checked" };
+        if (res.band === "unknown") {
+          const un = res.un_check || {};
+          st = l.key !== "UN" || un.status === "unavailable" ? { cls: "", text: "Not checked" }
+             : un.status === "disagree" ? { cls: "hit-review", text: "Possible match" } : { cls: "", text: "No close UN name" };
+        }
         else if (res.band !== "clear" && top && top.score >= cut.clear_below && on(top, l.country)) {
           st = res.band === "hit" ? { cls: "hit-avoid", text: "Listed" } : { cls: "hit-review", text: "Similar name" };
         } else if (res.band !== "clear" && [top, ...rest].some(c => c && on(c, l.country))) st = { cls: "", text: "Weaker match" };
@@ -822,7 +884,7 @@
           (parsed.source !== "model" ? `<span>&nbsp;(fields were not read by the model)</span>` : "");
         return;
       }
-      $("readback").innerHTML = `<span>Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
+      $("readback").innerHTML = `<span>${esc(SCOPE)} Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
     }
 
     // ---------- Chips ----------
@@ -914,6 +976,7 @@
               <div class="row"><span class="k">You typed</span><span class="v">${esc(typed)}</span></div>
               <div class="row"><span class="k">Listed as</span><span class="v">${highlight(c.caption || "", typed)}</span></div>
               <div class="why">${why} On ${plural(n, "list")}.<span class="more">${open ? "Hide details" : "Show details"}</span></div>
+              ${kindsOf(c.topics).length ? `<div class="kindrow">${kindsOf(c.topics).map(k => `<span class="kind ${k.key}">${esc(k.label)}</span>`).join("")}</div>` : ""}
             </div>
             <div class="meter">
               <div class="num">${pct}<small>match score</small></div>
@@ -937,7 +1000,26 @@
         </div>`;
       }).join("");
 
-      const steps = [rep.next_step, ...(STEPS[res.band] || [])].filter(Boolean);
+      // What the records are about. The sentence says it first, in the user's own terms.
+      const kinds = KINDS.filter(k => possible.some(c => kindsOf(c.topics).includes(k)));
+      const kindsHtml = kinds.length ? `<section class="sect kinds-sec"><div class="mhead">What kind of listing is this?</div>
+          <p class="kindline">The data we found is related to ${esc(joinWords(kinds.map(k => k.phrase)))}.</p>
+          <ul class="kinds">${kinds.map(k => `<li><span class="kind ${k.key}">${esc(k.label)}</span><span>${esc(k.text)}</span></li>`).join("")}</ul></section>` : "";
+
+      // Unknown: say why, say what was still checked, and give the person something to do.
+      const why0 = res.band === "unknown" ? unavailable(res.match_error) : null;
+      const unHtml = res.band === "unknown" ? `<section class="sect unavail"><div class="mhead">Why this is Unknown</div>
+          <p>${esc(why0.cause)}</p>
+          <p><strong>What we could still check:</strong> ${un.status === "disagree" && un.best
+            ? `our own copy of the UN Security Council list found a <b>possible match</b>: ${esc(un.best.matched_name)} (closeness ${num(un.best.score)}). Treat this name as a possible match until it is checked properly.`
+            : un.status === "unavailable" ? `nothing. ${esc(cap(un.reason || ""))}.`
+            : "our own copy of the UN Security Council list has no name close to this one. That is one list of many, so this is still <b>not a clear result</b>."}</p>
+          <div class="mhead sub">Check it by hand in the meantime</div>
+          <div class="src">${MANUAL.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join("")}
+            <button type="button" data-copy="${esc(typed)}">Copy the name</button></div>
+        </section>` : "";
+
+      const steps = [res.band === "unknown" ? why0.fix : null, rep.next_step, ...(STEPS[res.band] || [])].filter(Boolean);
       const reasons = res.band !== "clear" && (res.reasons || []).length
         ? `<ul class="reasons">${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
       let why = more("What we screened", fieldsHtml(res.parsed || {}), (res.parsed || {}).source !== "model") + reportHtml(rep);
@@ -968,9 +1050,10 @@
         <section class="record ${v.cls} reveal">
           <div>
             <p class="for">Result for <b>${esc(typed)}</b></p>
-            <p class="meaning">${esc(v.line)}</p>
+            <p class="meaning">${esc(res.band === "unknown" ? `${v.line} ${why0.cause}` : v.line)}</p>
+            ${res.band === "clear" ? `<p class="scope">${esc(SCOPE)}</p>` : ""}
             ${reasons}
-            ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
+            ${!res.live && res.fetched_at ? `<p class="note">The live check failed, so this is the saved result from ${esc(fmt(res.fetched_at))}.</p>` : ""}
             <div class="actions">
               <button class="ghost" type="button" id="print">Print record</button>
               <button class="ghost" type="button" id="copySum">Copy summary</button>
@@ -986,6 +1069,8 @@
             }).join("")}</div>` : ""}
         </section>
         ${possible.length ? `<div class="matches-wrap"><div class="mhead">${possible.length === 1 ? "1 possible match" : possible.length + " possible matches"}</div><div class="matches">${matches}</div></div>` : ""}
+        ${kindsHtml}
+        ${unHtml}
         <section class="sect"><div class="mhead">What to do next</div>
           <ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>
         <section class="sect"><div class="mhead">Why we think so</div>${why}</section>

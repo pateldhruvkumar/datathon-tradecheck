@@ -199,3 +199,22 @@ def test_the_command_line_prints_non_latin_names_on_a_windows_console(world, mon
     assert pipeline.main(["--full", "Is Хава Панга Мандро sanctioned?"]) == 0
     sys.stdout.flush()
     assert "Хава Панга Мандро" in out.getvalue().decode("utf-8")
+
+
+def test_topics_say_what_kind_of_listing_a_candidate_is(world):
+    state, _, _ = world
+    candidate = _candidate(0.97)
+    candidate["properties"]["topics"] = ["sanction", "role.pep", "crime"]
+    state["results"] = [candidate, _candidate(0.75)]  # the second has no topics at all
+    res = pipeline.screen("Is Khawa Panga Mandro sanctioned?")
+    assert [c["topics"] for c in res["candidates"]] == [["sanction", "role.pep", "crime"], []]
+    assert res["match_error"] is None
+
+
+def test_a_failed_match_says_why_so_the_page_can_explain_it(world):
+    state, routes, _ = world
+    routes["/match/sanctions"] = FakeResponse(402, {"detail": "Your organization has run out of API credits."})
+    state["name"] = "Northwind Metals"
+    res = pipeline.screen("Can we ship to Northwind Metals?")
+    assert (res["band"], res["live"], res["candidates"]) == ("unknown", False, [])
+    assert res["match_error"] == "OpenSanctions answered HTTP 402"
