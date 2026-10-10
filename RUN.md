@@ -47,7 +47,7 @@ Every screen makes live API calls and spends credits: one model call to extract 
 uvicorn app.main:app --env-file .env
 ```
 
-Open http://127.0.0.1:8000. Restart uvicorn after you edit `.env`.
+Open http://127.0.0.1:8000. The app reads `.env` itself at startup, so `--env-file .env` is optional. A key that is already set in the shell wins over the file, and the startup log names any key that is still missing. Restart uvicorn after you edit `.env`.
 
 ## Tests (offline)
 

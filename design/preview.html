@@ -121,7 +121,7 @@
 
     /* ---------- Voyage track: the loader and list status in one strip ---------- */
     .voyage { margin-top: 18px; background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 4px 18px 10px; }
-    .vtrack { position: relative; height: 134px; }
+    .vtrack { position: relative; height: 122px; }
     .sea { position: absolute; left: 0; right: 0; top: 40px; height: 14px; border-radius: 7px;
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14'%3E%3Cpath d='M0 7 Q10 0 20 7 T40 7 V14 H0Z' fill='%23d9d4fb'/%3E%3C/svg%3E") repeat-x;
       animation: sea 2.5s linear infinite; }
@@ -136,7 +136,7 @@
     .vship .bubble { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 4px); white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--ink); color: #fff; opacity: 0; transition: opacity .2s, transform .2s; }
     .vship .bubble.show { opacity: 1; transform: translate(-50%, -2px); }
     .stops { position: absolute; inset: 0; }
-    .vtrack .list { position: absolute; top: 34px; width: 20%; margin-left: -10%; text-align: center; }
+    .vtrack .list { position: absolute; top: 34px; width: 31%; margin-left: -15.5%; text-align: center; }
     .vtrack .list .buoy { width: 26px; height: 26px; margin: 0 auto; border-radius: 50%; background: var(--card); border: 3px solid #cfcbe6; position: relative; transition: background .3s, border-color .3s, transform .3s; }
     .vtrack .list .buoy::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: #cfcbe6; transition: background .3s; }
     .vtrack .list .lbl { margin-top: 8px; font-size: 14px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; }
@@ -256,7 +256,6 @@
     .error { background: var(--card); border: 1.5px solid var(--avoid); border-radius: 16px; padding: 18px 22px; box-shadow: var(--shadow); }
     .error b { color: var(--avoid); }
 
-    footer .limit { margin: 0 0 8px; color: var(--ink); font-weight: 600; }
     footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--soft); max-width: 70ch; }
 
     /* Mode tabs */
@@ -338,103 +337,6 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
     }
-
-    /* ---------- Additions for the live app (everything above is the original design) ---------- */
-    .vtrack .list .lbl .code { font: 800 11px/1 var(--sans); padding: 3px 6px; border-radius: 6px; background: var(--iris-wash); color: var(--iris); letter-spacing: .03em; }
-    .vtrack .list .lbl { flex-wrap: wrap; }
-    .vtrack .list .meta { font-size: 12px; }
-    .vtrack .list .state { font-size: 12px; }
-    .mhead small { display: block; font: 400 15px/1.5 var(--sans); color: var(--soft); margin-top: 4px; letter-spacing: 0; }
-    .hint { color: var(--soft); font-size: 14px; margin: 8px 0 0; }
-    .note { color: var(--review); font-size: 14px; margin: 10px 0 0; }
-    .err { color: var(--avoid); margin: 0; }
-    .record .reasons { margin: 10px 0 0; padding-left: 20px; font-size: 14px; color: var(--soft); }
-    .record .note { margin-top: 10px; }
-    .sect { margin-top: 34px; }
-    .sect .mhead { margin-top: 0; }
-
-    ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
-    ol.steps li { counter-increment: step; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px 14px 62px; position: relative; box-shadow: var(--shadow); }
-    ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 12px; width: 32px; height: 32px; border-radius: 50%;
-      background: var(--iris-wash); color: var(--iris); font: 800 16px/32px var(--serif); text-align: center; }
-
-    details.acc { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-    details.acc + details.acc { margin-top: 10px; }
-    details.acc > summary { cursor: pointer; padding: 14px 18px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-    details.acc > summary::-webkit-details-marker { display: none; }
-    details.acc > summary::after { content: "+"; font: 800 20px/1 var(--serif); color: var(--iris); }
-    details.acc[open] > summary::after { content: "\2013"; }
-    /* Long alias lists, addresses and notes must wrap inside the card, never run past it. */
-    .det { padding: 0 18px 18px; min-width: 0; overflow-wrap: anywhere; }
-    .det > :first-child { margin-top: 0; }
-    .sect > p { margin: 0 0 12px; }
-    ul.claims, ol.claims { margin: 0; padding-left: 20px; }
-    ul.claims li, ol.claims li { margin: 4px 0; }
-    .cite { font-size: 13px; text-decoration: none; background: var(--iris-wash); border-radius: 4px; padding: 0 5px; }
-    .tablewrap { overflow-x: auto; }
-    table.lists { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0 4px; }
-    table.lists th, table.lists td { text-align: left; padding: 6px 12px 6px 0; border-top: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
-    table.lists th { color: var(--soft); font-size: 13px; }
-    table.lists tr:first-child th { border-top: 0; }
-    table.lists tr.group th { color: var(--ink); font-size: 15px; padding-top: 12px; }
-    details.candidate { padding: 8px 0; border-top: 1px solid var(--line); }
-    details.candidate:first-child { border-top: 0; padding-top: 0; }
-    details.candidate summary { cursor: pointer; }
-
-    .proof { border: 2px dashed var(--line); border-radius: 18px; padding: 20px 22px; display: grid; gap: 12px; margin-top: 34px; }
-    .proof .mhead { margin: 0; }
-    .proof .src { margin-top: 0; }
-    .srcs ol { margin-top: 6px; }
-
-    .queue-sec { margin-top: 44px; }
-    .queue-sec .mhead { margin-top: 0; }
-    ul.queue { list-style: none; margin: 0; padding: 4px 18px; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-    ul.queue li { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
-    ul.queue li:first-child { border-top: 0; }
-    ul.queue .ghost { padding: 6px 14px; font-size: 14px; }
-    #case { display: grid; gap: 16px; margin-top: 16px; }
-    #case:empty { display: none; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .panel { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 16px 18px; min-width: 0; box-shadow: var(--shadow); }
-    .panel h3 { margin: 0 0 8px; font: 600 19px var(--serif); }
-    .panel dl { grid-template-columns: 110px 1fr; }
-    #rv { display: grid; gap: 10px; }
-    #rv input, #rv textarea { font: inherit; color: var(--ink); background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; }
-    #rv input:focus, #rv textarea:focus { border-color: var(--iris); outline: none; }
-    #rv .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-    #rv .primary { min-height: 0; padding: 10px 18px; font-size: 16px; }
-
-    .kind { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--unknown-wash); color: var(--unknown); }
-    .kind.sanction { background: var(--avoid-wash); color: var(--avoid); }
-    .kind.trade { background: var(--review-wash); color: var(--review); }
-    .kind.pep { background: var(--iris-wash); color: var(--iris); }
-    .kind.security { background: #e8ecf8; color: #2f3f8f; }
-    .kindrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .kindline { font-size: 18px; font-weight: 500; margin: 0 0 12px; max-width: 60ch; }
-    ul.kinds { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-    ul.kinds li { display: grid; grid-template-columns: 250px 1fr; gap: 6px 14px; align-items: baseline; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 16px; font-size: 15px; }
-    .record .scope { margin: 10px 0 0; font-size: 15px; color: var(--soft); max-width: 52ch; }
-    .unavail { background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 20px 22px; box-shadow: var(--shadow); }
-    .unavail .mhead { margin: 0 0 8px; }
-    .unavail .mhead.sub { font-size: 18px; margin: 18px 0 4px; }
-    .unavail p { margin: 0 0 10px; max-width: 70ch; }
-    .unavail .src { margin-top: 8px; }
-
-    /* The five stops sit in a fixed-height track. On a phone each column is about 60px wide,
-       so a country name and a status such as "Weaker match listed" wrap to 2-3 lines. */
-    @media (max-width: 480px) {
-      .vtrack { height: 184px; }
-    }
-    @media (max-width: 800px) {
-      ul.kinds li { grid-template-columns: 1fr; }
-      .vtrack .list .meta { display: none; }
-      .vtrack .list .lbl { font-size: 12px; }
-      .vtrack .list .state { font-size: 11px; }
-      .grid2 { grid-template-columns: 1fr; }
-      ol.steps li { padding-left: 58px; }
-    }
-    @media print { .queue-sec, #jump, #toast { display: none !important; } details.acc > .det { display: block; } }
-
     @media print {
       #boot, .hero, .voyage, footer, .kbd, .actions button, .more { display: none !important; }
       body { background: #fff; }
@@ -455,12 +357,13 @@
       <div class="boot-word">TradeCheck</div>
       <ul class="boot-steps">
         <li id="b1"><i></i>Connecting to the screening service</li>
-        <li id="b2"><i></i>Loading the review queue</li>
+        <li id="b2"><i></i>Loading US and Canadian sanctions lists</li>
         <li id="b3"><i></i>Getting ready to check names</li>
       </ul>
     </div>
   </div>
 
+  <div style="background:#1f1b3d;color:#fff;font:600 14px/1.4 Figtree,sans-serif;padding:8px 16px;text-align:center">Preview using saved results from your database. Any name other than the two examples shows a sample Clear result.</div>
 <div class="wrap">
     <header class="top">
       <div class="brand">
@@ -494,8 +397,7 @@
       </svg>
       <div>
         <h1>Who are you about to <em>trade</em> with?</h1>
-        <p id="scope"></p>
-        <p>Check a buyer, supplier or person against the Canadian, US, EU, UK and UN sanctions lists in seconds, with the source and date behind every answer.</p>
+        <p>Check a buyer, supplier or person against the US and Canadian sanctions lists in seconds, with the source and date behind every answer.</p>
       </div>
     </section>
 
@@ -506,8 +408,8 @@
 
     <div id="one">
     <form id="f" class="ask" autocomplete="off">
-      <label for="q">Business or person’s name, or a question</label>
-      <input id="q" type="text" placeholder="Type a name, or ask a question" autofocus />
+      <label for="q">Business or person’s name</label>
+      <input id="q" type="text" placeholder="Type a buyer, supplier or person…" autofocus />
       <button id="go" type="button">Check name</button>
     </form>
     <div class="readback" id="readback" aria-live="polite"></div>
@@ -517,7 +419,7 @@
     <div id="many" hidden>
       <div class="batch">
         <label for="names" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Names to check, one per line</label>
-        <textarea id="names" placeholder="Paste your buyers or suppliers, one per line (up to 10)&#10;e.g. AgroDistribuidora del Bajío SA de CV&#10;Khawa Panga Mandro&#10;Fraser Valley Honey Co."></textarea>
+        <textarea id="names" placeholder="Paste your buyers or suppliers, one per line&#10;e.g. AgroDistribuidora del Bajío SA de CV&#10;Khawa Panga Mandro&#10;Fraser Valley Honey Co."></textarea>
         <div class="batch-foot">
           <span id="ncount">0 names</span>
           <button class="primary" type="button" id="checkAll">Check all names</button>
@@ -538,7 +440,7 @@
             <path d="M2 27 H56 L50 38 H8 Z" fill="#1f1b3d"/><rect x="5" y="33" width="48" height="2" fill="#d6335a"/></svg>
         </div>
       </div>
-      <div class="vfoot"><span id="vmsg">Ready to check. Each buoy is one jurisdiction’s sanctions lists.</span><span id="fresh"></span></div>
+      <div class="vfoot"><span id="vmsg">Ready to check. Each buoy is one sanctions list.</span><span id="fresh"></span></div>
     </section>
 
     <div id="batchOut" hidden></div>
@@ -547,231 +449,49 @@
     <div id="toast" role="status" aria-live="polite"></div>
     <button id="jump" type="button">See your result</button>
 
-    <section class="queue-sec" aria-labelledby="queue-title">
-      <div class="mhead" id="queue-title">Waiting for review</div>
-      <div id="queue"><p class="hint">Loading…</p></div>
-      <div id="case"></div>
-    </section>
-
     <footer>
-      <p id="datalimit" class="limit"></p>
-      Sanctions data: OpenSanctions (CC BY-NC 4.0), plus our own copy of the UN Security Council list as a cross-check. The matcher decides; the model only explains. Missing data shows as Unknown, never green. This is a screening aid, not legal advice.
+      Lists come straight from the US Treasury (OFAC) and Global Affairs Canada. Canadian coverage is the autonomous SEMA and JVCFOA list; measures Canada adopts under the UN Act aren’t included yet. This is a screening aid, not legal advice.
     </footer>
   </div>
 
   <script>
+const MOCK={"KHAWA PANGA MANDRO": {"query": "Khawa Panga Mandro", "checked_at": "2026-10-09T15:53:28+00:00", "disclaimer": "Not legal advice. Screening reflects the listed sources as of the dates shown.", "hits": [{"score": 100.0, "level": "avoid", "matched_name": "Khawa Panga MANDRO", "match_type": "exact", "quality": "primary", "entity": {"source_list": "OFAC-SDN", "source_ref": "10033", "entity_type": "individual", "primary_name": "Khawa Panga MANDRO", "program": "DRCONGO", "listed_date": null, "countries": [], "dobs": ["20 Aug 1973"], "place_of_birth": "Bunia, Democratic Republic of the Congo", "ids": [], "source_url": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML", "fetched_at": "2026-10-07T23:48:12+00:00"}}, {"score": 90.0, "level": "caution", "matched_name": "Pan", "match_type": "fuzzy", "quality": "weak", "entity": {"source_list": "OFAC-SDN", "source_ref": "42916", "entity_type": "individual", "primary_name": "Oscar Noe MEDINA GONZALEZ", "program": "ILLICIT-DRUGS-EO14059", "listed_date": null, "countries": ["Mexico"], "dobs": ["11 May 1983"], "place_of_birth": "Sinaloa, Mexico", "ids": [{"type": "C.U.R.P.", "value": "MEGO830511HSLDNS01", "country": "Mexico"}], "source_url": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML", "fetched_at": "2026-10-07T23:48:12+00:00"}}], "verdict": "Avoid", "lists_screened": [{"source_list": "CA-SEMA", "fetched_at": "2026-10-07T23:48:15+00:00"}, {"source_list": "OFAC-CONS", "fetched_at": "2026-10-07T23:48:14+00:00"}, {"source_list": "OFAC-SDN", "fetched_at": "2026-10-07T23:48:12+00:00"}]}, "AGRO": {"query": "AgroDistribuidora del Baj\u00edo SA de CV", "checked_at": "2026-10-09T15:53:28+00:00", "disclaimer": "Not legal advice. Screening reflects the listed sources as of the dates shown.", "hits": [{"score": 90.0, "level": "caution", "matched_name": "Dora", "match_type": "fuzzy", "quality": "weak", "entity": {"source_list": "OFAC-SDN", "source_ref": "57349", "entity_type": "individual", "primary_name": "Karina Guadalupe CARRILLO TORRES", "program": "ILLICIT-DRUGS-EO14059", "listed_date": null, "countries": ["Mexico"], "dobs": ["28 Apr 1991"], "place_of_birth": "Sinaloa, Mexico", "ids": [{"type": "C.U.R.P.", "value": "CATK910428MSLRRR08", "country": "Mexico"}, {"type": "Gender", "value": "Female", "country": ""}], "source_url": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.XML", "fetched_at": "2026-10-07T23:48:12+00:00"}}], "verdict": "Caution", "lists_screened": [{"source_list": "CA-SEMA", "fetched_at": "2026-10-07T23:48:15+00:00"}, {"source_list": "OFAC-CONS", "fetched_at": "2026-10-07T23:48:14+00:00"}, {"source_list": "OFAC-SDN", "fetched_at": "2026-10-07T23:48:12+00:00"}]}, "CLEAR": {"query": "Fraser Valley Honey Co.", "checked_at": "2026-10-09T15:53:28+00:00", "disclaimer": "Not legal advice. Screening reflects the listed sources as of the dates shown.", "hits": [], "verdict": "Clear", "lists_screened": [{"source_list": "CA-SEMA", "fetched_at": "2026-10-07T23:48:15+00:00"}, {"source_list": "OFAC-CONS", "fetched_at": "2026-10-07T23:48:14+00:00"}, {"source_list": "OFAC-SDN", "fetched_at": "2026-10-07T23:48:12+00:00"}]}}, STATS={"lists": [{"source_list": "OFAC-SDN", "names": 43959, "entities": 19363, "fetched_at": "2026-10-07T23:48:12+00:00"}, {"source_list": "OFAC-CONS", "names": 1667, "entities": 481, "fetched_at": "2026-10-07T23:48:14+00:00"}, {"source_list": "CA-SEMA", "names": 9879, "entities": 5707, "fetched_at": "2026-10-07T23:48:15+00:00"}]};
+window.fetch=async(u,o)=>{ if(u==="/stats"){await new Promise(s=>setTimeout(s,900));return {ok:true,json:async()=>STATS};}
+ const nm=JSON.parse(o.body).name, n=nm.toUpperCase();
+ const r=n.includes("KHAWA")?MOCK["KHAWA PANGA MANDRO"]:n.includes("AGRO")?MOCK.AGRO:Object.assign({},MOCK.CLEAR,{query:nm});
+ await new Promise(s=>setTimeout(s,300));return {ok:true,json:async()=>r};};
+</script>
+<script>
   (() => {
     const $ = id => document.getElementById(id);
     const q = $("q"), form = $("f"), go = $("go");
-    // Every piece of text from the server goes through esc() before it reaches innerHTML.
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-    // Only http(s) links become hrefs; anything else (javascript:, data:) goes nowhere.
-    const safeUrl = u => /^https?:\/\//i.test(String(u ?? "")) ? String(u) : "#";
-    const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${esc(text)}</a>`;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
-    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-    const num = n => typeof n === "number" ? n.toFixed(2) : "—";
-    const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
-    const auditUrl = id => `/audit/${encodeURIComponent(id)}`;
-    const fmt = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); };
-    const fmtDay = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
 
-    // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
-    // detail (a validation error lists each field), so callers can show it as is.
-    async function api(path, body) {
-      const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-      const r = await fetch(path, opts);
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        const d = data.detail;
-        throw new Error(Array.isArray(d) ? d.map(x => `${(x.loc || []).slice(-1)[0]}: ${x.msg}`).join("; ") : (d || "HTTP " + r.status));
-      }
-      return data;
-    }
+    const FLAG_US = `<svg viewBox="0 0 22 15"><rect width="22" height="15" fill="#fff"/><g fill="#c8314a"><rect width="22" height="1.6"/><rect y="3.3" width="22" height="1.6"/><rect y="6.7" width="22" height="1.6"/><rect y="10" width="22" height="1.6"/><rect y="13.4" width="22" height="1.6"/></g><rect width="9.5" height="8.3" fill="#2f3f8f"/></svg>`;
+    const FLAG_CA = `<svg viewBox="0 0 22 15"><rect width="22" height="15" fill="#fff"/><rect width="5.5" height="15" fill="#d52b1e"/><rect x="16.5" width="5.5" height="15" fill="#d52b1e"/><path d="M11 3.2l1 2 1.4-.6-.5 2.6 1.6-.9.3 1-1.2 1.3.5.4H11.6v1.8h-1.2V9h-2.5l.5-.4-1.2-1.3.3-1 1.6.9-.5-2.6 1.4.6z" fill="#d52b1e"/></svg>`;
+    const LISTS = [
+      { key: "OFAC-SDN",  flag: FLAG_US, country: "United States", name: "Specially Designated Nationals", short: "US SDN" },
+      { key: "OFAC-CONS", flag: FLAG_US, country: "United States", name: "Consolidated non-SDN lists",     short: "US non-SDN" },
+      { key: "CA-SEMA",   flag: FLAG_CA, country: "Canada",        name: "Autonomous sanctions (SEMA / JVCFOA)", short: "Canada SEMA" },
+    ];
+    const listLabel = k => { const l = LISTS.find(x => x.key === k); return l ? `${l.country}: ${l.name}` : k; };
 
-    // ---------- What the server's band means on this page ----------
-    // Everything is keyed by band (hit / review / clear / unknown), never by the label text,
-    // so renaming a label in tradecheck/layer2.py cannot quietly change a colour.
-    const NAME = { hit: "Avoid", review: "Caution", clear: "Clear", unknown: "Unknown" };
     const VERDICT = {
-      Avoid:   { cls: "avoid",   sub: "ON A LIST",      line: "Strong match on a sanctions list. Stop and get advice before you go ahead." },
-      Caution: { cls: "review",  sub: "CHECK DETAILS",  line: "A close name is on a list. Someone should check it before you go ahead." },
-      Clear:   { cls: "clear",   sub: "GOOD TO GO",     line: "Good to go. This name isn’t on any sanctions list we checked. That covers these lists only, as of the dates shown." },
-      Unknown: { cls: "unknown", sub: "NOT CHECKED",    line: "We couldn’t finish the check, so this is not a clear result." },
+      Avoid:   { cls: "avoid",   word: "Avoid",   sub: "ON A LIST",      line: "This name is on a sanctions list. Don’t proceed without legal review." },
+      Caution: { cls: "review",  word: "Review",  sub: "CHECK DETAILS",  line: "Possible match. Check the details below before you proceed." },
+      Clear:   { cls: "clear",   word: "Clear*",  sub: "NO MATCH FOUND", line: "No match on any list checked. *Clear covers only these lists, as of the dates shown." },
+      Unknown: { cls: "unknown", word: "Unknown", sub: "NO DATA",        line: "No list data was available, so this name couldn’t be checked. This is not a clear result." },
     };
-    const verdictOf = res => NAME[res.band] || "Unknown";
-    const CUTOFFS = { clear_below: 0.70, hit_at: 0.90 };  // used only if the server omits res.cutoffs
-    const cutoffs = res => res.cutoffs || CUTOFFS;
-    // The steps under "What to do next". The server's next_step (review and hit only) goes
-    // first; these fixed ones follow. Kept generic on purpose: no legal claims we can't back.
-    const STEPS = {
-      hit: ["Don't ship, sign or take payment while this is open.",
-            "Get advice from a trade lawyer or your bank's compliance team before you go ahead."],
-      review: ["Don't ship or take payment until the review is done.",
-               "Ask your buyer for a registration or licence number, then check again with it. It tells two similar names apart."],
-      clear: ["You can go ahead with this name. Nothing on the lists we checked is close to it.",
-              "Keep this record with your deal file. It shows which lists were checked and when.",
-              "Check again before each new shipment or contract. Lists change often."],
-      unknown: ["Try the check again in a few minutes.",
-                "Don't treat this as clear. Wait for a finished check before you go ahead."],
+    const AVOID_AT = 95, REVIEW_AT = 90;
+
+    // Human-readable official pages for each list. The raw data files are huge XML, so they're offered only as a download.
+    const SOURCE = {
+      "OFAC-SDN":  { site: "OFAC’s official search", url: "https://sanctionssearch.ofac.treas.gov/", size: "about 29 MB" },
+      "OFAC-CONS": { site: "OFAC’s official search", url: "https://sanctionssearch.ofac.treas.gov/", size: "about 1 MB" },
+      "CA-SEMA":   { site: "Canada’s official list", url: "https://www.international.gc.ca/world-monde/international_relations-relations_internationales/sanctions/consolidated-consolide.aspx?lang=eng", size: "about 3 MB" },
     };
-    // What a record is about, in plain words. OpenSanctions "topics" are matched by prefix;
-    // a topic not listed here is ignored rather than guessed at.
-    const KINDS = [
-      { key: "sanction", re: /^(sanction|asset\.frozen)/, label: "Sanctions", phrase: "sanctioned parties",
-        text: "On a government sanctions list. Dealing with them can be illegal, so stop and get advice." },
-      { key: "trade", re: /^(export\.control|debarment)/, label: "Trade restrictions", phrase: "parties under trade restrictions",
-        text: "Barred or restricted by a government from exports, contracts or dealings." },
-      { key: "pep", re: /^role\.(pep|pol|oligarch|judge|civil|diplo|gov)/, label: "Politically exposed person (PEP)", phrase: "politically exposed persons (PEPs)",
-        text: "Holds or held a senior public role. This is not a sanction, but banks and insurers expect extra care." },
-      { key: "pep", re: /^role\.rca/, label: "Close to a PEP", phrase: "relatives or close associates of PEPs",
-        text: "A relative or close associate of a politically exposed person. Not a sanction, but it may need extra checks." },
-      { key: "security", re: /^(crime|wanted|poi|reg\.)/, label: "Security interest", phrase: "individuals of security interest",
-        text: "Linked to crime, terrorism or a security or law-enforcement case, or flagged by a regulator." },
-    ];
-    const kindsOf = topics => KINDS.filter(k => (topics || []).some(t => k.re.test(t)));
-    const joinWords = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
-    // What a check covers, in words a business owner knows. Shown under the heading and in a
-    // Clear result, so a "no match" is read as covering these kinds of listing only.
-    const SCOPE = "We check if a name is on a government sanctions list, is a politically exposed person (called a “PEP”), or is linked to crime or a security case.";
-    $("scope").textContent = SCOPE;
-    // The one data limit, in the footer, the proof box and the copied summary.
-    const DATA_LIMIT = "Data limit: we search OpenSanctions data only, so a name or list it doesn’t carry won’t be found here.";
-    $("datalimit").textContent = DATA_LIMIT;
-
-    // Why a check could not finish, from the matcher's error text, in words a business owner
-    // can act on. 402 is the one that was hit in practice: the API account is out of credits.
-    function unavailable(err) {
-      const code = (/HTTP (\d{3})/.exec(err || "") || [])[1];
-      if (code === "402") return { cause: "The sanctions matching service (OpenSanctions) has run out of API credits, so new names can’t be checked right now. This is a service problem, not a result about this name.",
-        fix: "Ask whoever runs TradeCheck to add credits to the OpenSanctions account (or switch to a new API key), then check again." };
-      if (code === "401" || code === "403") return { cause: `The sanctions matching service refused our API key (HTTP ${code}), so this name couldn’t be checked.`,
-        fix: "Ask whoever runs TradeCheck to check the OpenSanctions API key in the .env file." };
-      if (code === "429") return { cause: "The sanctions matching service is limiting requests right now (HTTP 429).",
-        fix: "Wait a minute and check again." };
-      if (code) return { cause: `The sanctions matching service answered with an error (HTTP ${code}).`, fix: "Try again in a few minutes." };
-      if (err) return { cause: "We couldn’t reach the sanctions matching service. It may be down, or the connection may be blocked.", fix: "Try again in a few minutes." };
-      return { cause: "The live check didn’t finish.", fix: "Try again in a few minutes." };
-    }
-    // Official search pages, so a person can check by hand while the live check is down.
-    const MANUAL = [
-      ["Canada: consolidated list", "https://www.international.gc.ca/world-monde/international_relations-relations_internationales/sanctions/consolidated-consolide.aspx?lang=eng"],
-      ["US: OFAC sanctions search", "https://sanctionssearch.ofac.treas.gov/"],
-      ["EU: sanctions map", "https://www.sanctionsmap.eu/"],
-      ["UK: sanctions list search", "https://sanctionslist.fcdo.gov.uk/"],
-      ["UN: consolidated list", "https://scsanctions.un.org/search/"],
-    ];
-
-    const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
-                      ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
-
-    // Plain names for the OpenSanctions dataset IDs a candidate is listed in.
-    // [country or body, who publishes it, what the list is, group]
-    // An ID not here shows as is under "Other lists".
-    const DATASETS = {
-      un_sc_sanctions:         ["United Nations", "Security Council", "Consolidated sanctions list", "sanctions"],
-      us_ofac_sdn:             ["United States", "Treasury (OFAC)", "Specially Designated Nationals (SDN) list", "sanctions"],
-      us_ofac_cons:            ["United States", "Treasury (OFAC)", "Non-SDN consolidated sanctions list", "sanctions"],
-      ca_dfatd_sema_sanctions: ["Canada", "Global Affairs Canada", "Consolidated autonomous sanctions list", "sanctions"],
-      gb_fcdo_sanctions:       ["United Kingdom", "Foreign Office (FCDO)", "UK sanctions list", "sanctions"],
-      gb_hmt_sanctions:        ["United Kingdom", "Treasury (OFSI)", "Asset freeze targets", "sanctions"],
-      eu_fsf:                  ["European Union", "European Commission", "Financial sanctions (asset freezes)", "sanctions"],
-      eu_journal_sanctions:    ["European Union", "Official Journal", "Sanctions published in EU law", "sanctions"],
-      eu_travel_bans:          ["European Union", "EU Council", "Travel bans", "sanctions"],
-      fr_tresor_gels_avoir:    ["France", "Treasury (DG Trésor)", "National asset freeze register", "sanctions"],
-      be_fod_sanctions:        ["Belgium", "FPS Finance", "National financial sanctions list", "sanctions"],
-      ch_seco_sanctions:       ["Switzerland", "SECO", "Swiss sanctions list", "sanctions"],
-      mc_fund_freezes:         ["Monaco", "Budget and Treasury Department", "National fund freezes", "sanctions"],
-      jp_mof_sanctions:        ["Japan", "Ministry of Finance", "Economic sanctions (asset freezes)", "sanctions"],
-      au_dfat_sanctions:       ["Australia", "Foreign Affairs (DFAT)", "Consolidated sanctions list", "sanctions"],
-      za_fic_sanctions:        ["South Africa", "Financial Intelligence Centre", "Targeted financial sanctions list", "sanctions"],
-      ua_sfms_blacklist:       ["Ukraine", "Financial Monitoring Service", "Terrorism and international sanctions list", "sanctions"],
-      us_trade_csl:            ["United States", "Commerce, State and Treasury", "Consolidated Screening List (export checks)", "trade"],
-      us_sam_exclusions:       ["United States", "GSA (SAM.gov)", "Barred from federal contracts", "trade"],
-      tw_shtc:                 ["Taiwan", "Board of Foreign Trade", "High-tech export control list", "trade"],
-    };
-    const GROUPS = [["sanctions", "Sanctions lists"], ["trade", "Trade and contract screening lists"], ["other", "Other lists"]];
-    // The five stops on the voyage track. The country must match the first field of DATASETS.
-    const LISTS = [["CA", "Canada", "Global Affairs Canada"], ["US", "United States", "Treasury, Commerce, State"],
-                   ["EU", "European Union", "European Commission"], ["UK", "United Kingdom", "Treasury, Foreign Office"],
-                   ["UN", "United Nations", "Security Council"]].map(([key, country, who]) => ({ key, country, who }));
-    const countryOf = id => (DATASETS[id] || [])[0];
-
-    // A candidate's datasets as a table, sanctions first, the UN first within each group
-    // because other lists often copy it. Each list links to its OpenSanctions page.
-    function listsHtml(ids) {
-      const rows = ids.map(id => { const d = DATASETS[id]; return d ? [id, ...d] : [id, "—", "—", id, "other"]; })
-        .sort((a, b) => (b[0] === "un_sc_sanctions") - (a[0] === "un_sc_sanctions") || a[1].localeCompare(b[1]));
-      let html = `<div class="tablewrap"><table class="lists"><tr><th>Country or body</th><th>Who publishes it</th><th>List</th></tr>`;
-      for (const [group, title] of GROUPS) {
-        const inGroup = rows.filter(r => r[4] === group);
-        if (!inGroup.length) continue;
-        html += `<tr class="group"><th colspan="3">${title} (${inGroup.length})</th></tr>` + inGroup.map(([id, where, who, what]) =>
-          `<tr><td>${esc(where)}</td><td>${esc(who)}</td><td>${link("https://www.opensanctions.org/datasets/" + encodeURIComponent(id) + "/", what)}</td></tr>`).join("");
-      }
-      html += "</table></div>";
-      if (ids.includes("un_sc_sanctions") && ids.length > 1) {
-        html += `<p class="hint">Many countries copy UN listings into their own lists, so several rows can come from one UN decision.</p>`;
-      }
-      return html;
-    }
-
-    // One section of "Why we think so", closed unless open is set.
-    const more = (title, body, open) =>
-      `<details class="acc"${open ? " open" : ""}><summary>${title}</summary><div class="det">${body}</div></details>`;
-
-    // Each citation becomes a numbered link to its source. The numbers match the source list
-    // in "Proof for your records".
-    function citesHtml(claim, sources) {
-      const index = Object.fromEntries(sources.map((s, i) => [s.key, i]));
-      return `${esc(claim.text)}${(claim.cites || []).map(key => {
-        const s = sources[index[key]];
-        return s ? ` <a class="cite" href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" title="${esc(s.label)}">${index[key] + 1}</a>` : "";
-      }).join("")}`;
-    }
-    const claimsHtml = (claims, sources) => `<ul class="claims">${claims.map(c => `<li>${citesHtml(c, sources)}</li>`).join("")}</ul>`;
-    const sourcesHtml = sources => sources.length
-      ? `<ol class="claims">${sources.map(s => `<li>${link(s.url, s.label)}</li>`).join("")}</ol>` : "";
-
-    // The report: its summary, a note if it failed its checks, then one section per report
-    // part. The first part with something in it starts open. Used for a fresh result and
-    // for a case opened from the queue.
-    function reportHtml(rep) {
-      const sources = rep.sources || [];
-      let html = rep.summary ? `<p>${citesHtml(rep.summary, sources)}</p>` : "";
-      if (rep.check === "error") {
-        html += `<p class="note">Building the report failed (${esc(rep.check_reason)}). The result above still stands.</p>`;
-      }
-      if (rep.check === "template") {
-        html += `<p class="note">The model's report didn't pass its checks (${esc(rep.check_reason)}), so code wrote this report from the evidence.</p>`;
-      }
-      let first = true;
-      for (const [key, title] of SECTIONS) {
-        const claims = (rep.sections || {})[key] || [];
-        if (key === "news" && (rep.steps || {}).news === "unavailable") {
-          html += more(title, `<p class="hint">News search unavailable.</p>`);
-        } else if (claims.length) {
-          html += more(title, claimsHtml(claims, sources), first);
-          first = false;
-        }
-      }
-      return html;
-    }
-
-    // The fields we screened, with a note when they didn't come from the model.
-    function fieldsHtml(p) {
-      const rows = [["Type", p.schema], ["Name", p.name], ["Country", p.country], ["Birth date", p.birth_date],
-                    ["Registration no.", p.registration_number]].filter(([, v]) => v);
-      let html = `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
-      if (p.source === "fallback") {
-        html += `<p class="note">The fields could not be extracted (${esc(p.fallback_reason)}), so the whole question was screened as a name.</p>`;
-      }
-      if (p.source === "saved") {
-        html += `<p class="note">The model was unavailable (${esc(p.fallback_reason)}), so the fields it extracted the last time this exact question was asked were used.</p>`;
-      }
-      return html;
-    }
 
     function toast(msg) {
       const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -784,40 +504,24 @@
         document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); return ok;
       } catch { return false; }
     }
-    // The meter shows scores 50-100, so the two cutoffs sit well apart.
-    const pos = pct => Math.max(0, Math.min(100, (pct - 50) * 2));
+    const pos = s => Math.max(0, Math.min(100, (s - 50) * 2)); // meter shows scores 50–100
 
-    // ---------- Which list each candidate is on, for the voyage track ----------
-    // A tile names the top candidate's listing first; a weaker candidate on that country's
-    // lists still shows, so "No close name" is only said when it's true.
-    function listStatus(res) {
-      const cut = cutoffs(res), [top, ...rest] = res.candidates || [];
-      const on = (c, country) => (c.datasets || []).some(id => countryOf(id) === country);
-      const out = {};
-      for (const l of LISTS) {
-        let st = { cls: "ok", text: res.band === "clear" ? "No match" : "No close name" };
-        if (res.band === "unknown") {
-          const un = res.un_check || {};
-          st = l.key !== "UN" || un.status === "unavailable" ? { cls: "", text: "Not checked" }
-             : un.status === "disagree" ? { cls: "hit-review", text: "Possible match" } : { cls: "", text: "No close UN name" };
-        }
-        else if (res.band !== "clear" && top && top.score >= cut.clear_below && on(top, l.country)) {
-          st = res.band === "hit" ? { cls: "hit-avoid", text: "Listed" } : { cls: "hit-review", text: "Similar name" };
-        } else if (res.band !== "clear" && [top, ...rest].some(c => c && on(c, l.country))) st = { cls: "", text: "Weaker match" };
-        out[l.key] = st;
-      }
-      return out;
-    }
+    const fmt = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); };
+    const fmtDay = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+    const nf = n => Number(n).toLocaleString();
 
-    // ---------- Voyage track ----------
-    const STOP_AT = [10, 30, 50, 70, 90], START_AT = 3, END_AT = 96;
+    /* ---------- Lists rail ---------- */
+    let stats = {}, statsLoaded = false;
+    const STOP_AT = [24, 50, 76], START_AT = 4, END_AT = 93;
     function drawRail(state = {}) {
       $("rail").innerHTML = LISTS.map((l, i) => {
-        const st = state[l.key] || { cls: "", text: "Ready" };
-        return `<div class="list ${st.cls}" id="L-${l.key}" style="left:${STOP_AT[i]}%" title="${esc(l.country + ": " + l.who)}">
+        const s = stats[l.key] || {};
+        const st = state[l.key] || { cls: "", text: statsLoaded ? (s.fetched_at ? "Ready" : "Ready") : "Loading…" };
+        const count = !statsLoaded ? `<span class="sk">00,000</span>` : s.names ? nf(s.names) : "—";
+        return `<div class="list ${st.cls}" id="L-${l.key}" style="left:${STOP_AT[i]}%" title="${esc(l.country + ": " + l.name)}">
           <div class="buoy"></div>
-          <div class="lbl"><span class="code">${esc(l.key)}</span><span>${esc(l.country)}</span></div>
-          <div class="meta">${esc(l.who)}</div>
+          <div class="lbl">${l.flag}<span>${esc(l.short)}</span></div>
+          <div class="meta"><span class="count" data-to="${s.names || ""}">${count}</span> names</div>
           <div class="state"><span>${esc(st.text)}</span></div>
         </div>`;
       }).join("");
@@ -832,78 +536,86 @@
       say(text) { $("vmsg").textContent = text; },
       bubble(text) { const b = $("bubble"); b.textContent = text; b.classList.toggle("show", !!text); },
       reset() { this.park(START_AT); this.bubble(""); $("port").className = "port"; this.ship().classList.remove("stopped"); },
-      // Park the ship where the answer is: at the first list the top match is on, or the port.
       async finish(res) {
-        const st = listStatus(res);
-        const stopI = LISTS.findIndex(l => st[l.key].cls === "hit-avoid" || st[l.key].cls === "hit-review");
-        if (res.band === "hit" && stopI >= 0) {
-          await this.sail(STOP_AT[stopI], 500); this.ship().classList.add("stopped");
+        const hitsFor = k => (res.hits || []).filter(h => h.entity.source_list === k);
+        const avoidI = LISTS.findIndex(l => hitsFor(l.key).some(h => h.level === "avoid"));
+        const reviewI = LISTS.findIndex(l => hitsFor(l.key).length);
+        if (res.verdict === "Avoid" && avoidI >= 0) {
+          await this.sail(STOP_AT[avoidI], 500); this.ship().classList.add("stopped");
           this.bubble("Stopped!"); $("port").className = "port avoid";
           this.say("Stopped: this name is on a sanctions list.");
-        } else if (res.band === "review" && stopI >= 0) {
-          await this.sail(STOP_AT[stopI], 500);
+        } else if (res.verdict === "Caution" && reviewI >= 0) {
+          await this.sail(STOP_AT[reviewI], 500);
           this.bubble("Held for review"); $("port").className = "port review";
           this.say("Held for review: check the possible match below.");
-        } else if (res.band === "review" || res.band === "hit") {
-          await this.sail(STOP_AT[0], 500);
-          this.bubble("Held for review"); $("port").className = "port review";
-          this.say("Held for review: a person needs to check this name.");
-        } else if (res.band === "clear") {
+        } else if (res.verdict === "Clear") {
           await this.sail(END_AT, 800);
           this.bubble("Cleared!"); $("port").className = "port clear";
-          this.say("Good to go: no match on the lists checked.");
+          this.say("Cleared: no match on the lists checked.");
         } else {
-          this.bubble("Not checked"); this.say("We couldn’t finish the check. This is not a clear result.");
+          this.bubble("No data"); this.say("Couldn’t check: no list data was loaded.");
         }
       },
     };
-    function paintRail(res) {
-      const st = listStatus(res);
-      for (const l of LISTS) {
-        const el = $("L-" + l.key); if (!el) continue;
-        el.className = "list " + st[l.key].cls;
-        el.querySelector(".state span").textContent = st[l.key].text;
-      }
-    }
-    function showDates(res) {
-      const bits = [res.as_of ? `Sanctions data as of ${fmtDay(res.as_of)}` : "", res.un_check && res.un_check.list_date ? `UN list from ${fmtDay(res.un_check.list_date)}` : ""].filter(Boolean);
-      $("fresh").textContent = bits.join(" · ");
-    }
 
-    // ---------- Boot: hold the loader until the app answers ----------
+    /* ---------- Boot: hold the loader until list data arrives ---------- */
     async function boot() {
       drawRail();
       const step = (id, cls) => { $(id).className = cls; };
       const started = performance.now();
       step("b1", "on");
-      const alive = fetch("/health").then(r => r.ok).catch(() => false);
-      await sleep(300);
-      const ok = await alive;
-      step("b1", "ok"); step("b2", "on");
-      await loadQueue();
+      const statsReq = fetch("/stats").then(r => r.ok ? r.json() : null).catch(() => null);
+      const timeout = new Promise(r => setTimeout(() => r(null), 5000));
+      await sleep(350); step("b1", "ok"); step("b2", "on");
+      const d = await Promise.race([statsReq, timeout]);
+      if (d) for (const x of d.lists || []) stats[x.source_list] = x;
+      statsLoaded = true;
       step("b2", "ok"); step("b3", "on");
-      await sleep(Math.max(0, 900 - (performance.now() - started)));
+      await sleep(Math.max(0, 1100 - (performance.now() - started)));
       step("b3", "ok");
-      await sleep(200);
+      await sleep(250);
+      drawRail();
+      const dates = Object.values(stats).map(s => s.fetched_at).filter(Boolean).sort();
+      $("fresh").textContent = dates.length ? `Lists last downloaded ${fmtDay(dates[0])}` : "";
+      document.querySelectorAll(".list .count").forEach(el => countUp(el, Number(el.dataset.to), 900));
       if (reduced) document.querySelectorAll("svg.routes").forEach(s => s.pauseAnimations && s.pauseAnimations());
       $("boot").classList.add("done");
-      if (!ok) toast("Can’t reach the app. Start it with uvicorn app.main:app, then reload.");
       q.focus();
     }
 
-    // ---------- Read-back under the search box ----------
-    function drawReadback(parsed) {
-      if (parsed) {
-        const toks = [parsed.schema, parsed.name, parsed.country, parsed.birth_date, parsed.registration_number].filter(Boolean);
-        $("readback").innerHTML = `<span class="lbl">Screened</span>` + toks.map(t => `<span class="tok">${esc(t)}</span>`).join("") +
-          (parsed.source !== "model" ? `<span>&nbsp;(fields were not read by the model)</span>` : "");
-        return;
+    /* ---------- Live read-back ---------- */
+    const SUFFIXES = ["sa de cv","s a de c v","s de rl de cv","s de rl","sp z oo","pte ltd","pty ltd","co ltd","and co",
+      "ltd","limited","plc","inc","incorporated","llc","llp","lp","corp","corporation","co","company","cia","compania",
+      "sa","sas","sarl","srl","spa","sl","sro","ag","gmbh","bv","nv","oy","ab","as","aps","pjsc","ojsc","jsc","ooo","zao","pao",
+      "pty","tbk","bhd","sdn","fze","fzco","wll"].map(s => s.split(" ")).sort((a, b) => b.length - a.length);
+    function readName(raw) {
+      const folded = raw.normalize("NFKD").replace(/[̀-ͯ]/g, "");
+      const tokens = folded.toLowerCase().replace(/[^\p{L}\p{N} ]+/gu, " ").split(/\s+/).filter(Boolean);
+      const rawTokens = raw.toLowerCase().replace(/[^\p{L}\p{N} ]+/gu, " ").split(/\s+/).filter(Boolean);
+      let keep = tokens.length, changed = true;
+      while (changed && keep > 1) {
+        changed = false;
+        for (const p of SUFFIXES) {
+          if (p.length < keep && tokens.slice(keep - p.length, keep).join(" ") === p.join(" ")) { keep -= p.length; changed = true; break; }
+        }
       }
-      $("readback").innerHTML = `<span>Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
+      return tokens.map((t, i) => ({ t, cut: i >= keep, fold: rawTokens[i] && rawTokens[i] !== t }));
+    }
+    let lastTokens = "";
+    function drawReadback() {
+      const v = q.value.trim();
+      if (!v) { lastTokens = ""; $("readback").innerHTML = `<span>As you type, you’ll see how TradeCheck reads the name: accents folded, endings like “Ltd” or “SA de CV” set aside.</span>`; return; }
+      const toks = readName(v);
+      const key = toks.map(x => x.t + x.cut + x.fold).join("|");
+      if (key === lastTokens) return; lastTokens = key;
+      const hasCut = toks.some(x => x.cut), hasFold = toks.some(x => x.fold);
+      $("readback").innerHTML = `<span class="lbl">Searching for</span>` +
+        toks.map(x => `<span class="tok ${x.cut ? "cut" : ""} ${x.fold ? "fold" : ""}">${esc(x.t)}</span>`).join("") +
+        (hasCut || hasFold ? `<span>&nbsp;${[hasFold && "accents folded", hasCut && "legal ending ignored"].filter(Boolean).join(", ")}</span>` : "");
     }
 
-    // ---------- Chips ----------
-    const EXAMPLES = ["Is KHAWA PANGA MANDRO sanctioned?", "Can we sell to Khawa Mandro?", "Can we ship to AgroDistribuidora del Bajío SA de CV in Mexico?"];
+    /* ---------- Chips ---------- */
+    const EXAMPLES = ["Khawa Panga Mandro", "AgroDistribuidora del Bajío SA de CV"];
     let recent = [];
     try { recent = JSON.parse(localStorage.getItem("tc-recent") || "[]"); } catch { recent = []; }
     const DOT = { Avoid: "var(--avoid)", Caution: "var(--review)", Clear: "var(--clear)", Unknown: "var(--unknown)" };
@@ -918,157 +630,130 @@
       drawChips();
     }
 
-    // ---------- Screening with the voyage ----------
+    function countUp(el, to, ms) {
+      if (!to || reduced) return;
+      const t0 = performance.now();
+      const tick = now => {
+        const p = Math.min(1, (now - t0) / ms);
+        el.textContent = nf(Math.round(to * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+
+    /* ---------- Screening with loader ---------- */
     let running = false;
-    async function check(question) {
+    async function check(name) {
       if (running) return;
       running = true; go.disabled = true; go.innerHTML = `<span class="spinner"></span>Checking`;
       $("result").innerHTML = "";
       drawRail(Object.fromEntries(LISTS.map(l => [l.key, { cls: "", text: "Waiting" }])));
       document.body.classList.add("searched");
-      voyage.reset(); voyage.say("Sailing your question past each list…"); hideJump();
+      voyage.reset(); voyage.say(`Sailing “${name}” past each list…`); hideJump();
 
-      const request = api("/screen", { question });
-      request.catch(() => {});  // handled below; this only stops a premature unhandled-rejection warning
+      const request = fetch("/screen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) })
+        .then(r => { if (!r.ok) throw new Error(`The server answered ${r.status}.`); return r.json(); });
 
       try {
         for (const [i, l] of LISTS.entries()) {
-          await voyage.sail(STOP_AT[i], 380);
+          await voyage.sail(STOP_AT[i], 420);
           const el = $("L-" + l.key);
           el.className = "list scanning";
           el.querySelector(".state span").textContent = "Checking…";
-          await sleep(300);
+          countUp(el.querySelector(".count"), Number(el.querySelector(".count").dataset.to), 500);
+          await sleep(380);
           el.className = "list";
-          el.querySelector(".state span").textContent = "Waiting";
+          el.querySelector(".state span").textContent = "Checked";
         }
-        // The animation is only indicative: the real check can take up to a minute when a
-        // report is written, so say so while the server is still working.
-        const slow = setTimeout(() => {
-          $("result").innerHTML = `<div class="record unknown"><div><p class="for">Still checking…</p><p class="meaning">A review or avoid case can take up to a minute while the cited report is written. Your result will appear here.</p></div></div>`;
+        // Keep showing the loader if the server is still working.
+        let slow = setTimeout(() => {
+          $("result").innerHTML = `<div class="record unknown"><div><p class="for">Still checking…</p><p class="meaning">Large lists can take a moment. Your result will appear here.</p></div></div>`;
         }, 400);
-        let res;
-        try { res = await request; } finally { clearTimeout(slow); }
-        paintRail(res);
+        const res = await request;
+        clearTimeout(slow);
+
+        const screened = new Set((res.lists_screened || []).map(l => l.source_list));
+        for (const l of LISTS) {
+          const el = $("L-" + l.key);
+          const hits = (res.hits || []).filter(h => h.entity.source_list === l.key);
+          const avoid = hits.some(h => h.level === "avoid");
+          if (!screened.has(l.key)) { el.className = "list"; el.querySelector(".state span").textContent = "Not loaded"; continue; }
+          el.className = "list " + (avoid ? "hit-avoid" : hits.length ? "hit-review" : "ok");
+          el.querySelector(".state span").textContent = avoid ? "Listed" : hits.length ? `${hits.length} to review` : "No match";
+          await sleep(150);
+        }
         await voyage.finish(res);
-        showDates(res);
         render(res);
-        drawReadback(res.parsed);
-        remember(res.question || question, verdictOf(res));
-        loadQueue();
+        remember(res.query || name, res.verdict);
       } catch (err) {
-        drawRail(); voyage.reset();
-        const offline = err instanceof TypeError;
-        voyage.say(offline ? "The check didn’t run. Make sure the app is running." : "The check didn’t run.");
-        $("result").innerHTML = `<div class="error"><b>The check didn’t run.</b> ${esc(offline ? "Can’t reach the app. Make sure it is running (uvicorn app.main:app) and try again." : cap(err.message) + ".")}</div>`;
+        drawRail(); voyage.reset(); voyage.say("The check didn’t run. Make sure the app is running.");
+        $("result").innerHTML = `<div class="error"><b>The check didn’t run.</b> ${esc(err.message)} Make sure the app is running (uvicorn app.main:app) and try again.</div>`;
       } finally {
         running = false; go.disabled = false; go.textContent = "Check name";
       }
     }
 
-    // ---------- Result ----------
+    /* ---------- Result ---------- */
     function highlight(text, part) {
-      const i = String(text).toLowerCase().indexOf(String(part).toLowerCase());
+      const i = text.toLowerCase().indexOf(String(part).toLowerCase());
       if (!part || i < 0) return esc(text);
       return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + part.length)) + "</mark>" + esc(text.slice(i + part.length));
     }
     function render(res) {
-      const word = verdictOf(res), v = VERDICT[word];
-      const cut = cutoffs(res), cands = res.candidates || [], rep = res.report || {}, un = res.un_check || {};
-      const typed = (res.parsed && res.parsed.name) || res.question || "";
-      // Only candidates at or above the clear cutoff count as possible matches. Weaker ones
-      // are shown, folded away, so nobody reads a loose name as a hit.
-      const possible = cands.filter(c => c.score >= cut.clear_below), weak = cands.filter(c => c.score < cut.clear_below);
+      const v = VERDICT[res.verdict] || VERDICT.Unknown;
+      const hits = res.hits || [], query = res.query || "";
 
-      const matches = possible.map((c, i) => {
-        const lvl = c.score >= cut.hit_at ? "avoid" : "review";
-        const n = (c.datasets || []).length;
-        const pct = Math.round(c.score * 100), open = i === 0;
-        const why = lvl === "avoid" ? "A very close match to a listed name." : "Similar to a listed name. A person should check it.";
-        const url = "https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/";
+      const matches = hits.map(h => {
+        const e = h.entity, lvl = h.level === "avoid" ? "avoid" : "review";
+        const inside = h.match_type !== "exact" && query.toLowerCase().includes(String(h.matched_name).toLowerCase()) && h.matched_name.length < query.length;
+        const why = h.match_type === "exact" ? "Exact match on a listed name."
+          : inside ? `The listed alias “${esc(h.matched_name)}” appears inside the name you typed.`
+          : `Spelled similarly to the listed name “${esc(h.matched_name)}”.`;
+        const row = (k, val) => val ? `<dt>${k}</dt><dd>${val}</dd>` : "";
+        const ids = (e.ids || []).map(x => `${esc(x.type)} ${esc(x.value)}${x.country ? " (" + esc(x.country) + ")" : ""}`).join("<br>");
+        const score = Math.round(h.score);
+        const open = lvl === "avoid";
         return `<div class="match ${lvl} ${open ? "open" : ""}">
           <button class="head" type="button" aria-expanded="${open}">
             <div class="compare">
-              <div class="row"><span class="k">You typed</span><span class="v">${esc(typed)}</span></div>
-              <div class="row"><span class="k">Listed as</span><span class="v">${highlight(c.caption || "", typed)}</span></div>
-              <div class="why">${why} On ${plural(n, "list")}.<span class="more">${open ? "Hide details" : "Show details"}</span></div>
-              ${kindsOf(c.topics).length ? `<div class="kindrow">${kindsOf(c.topics).map(k => `<span class="kind ${k.key}">${esc(k.label)}</span>`).join("")}</div>` : ""}
+              <div class="row"><span class="k">You typed</span><span class="v">${highlight(query, h.matched_name)}</span></div>
+              <div class="row"><span class="k">Listed as</span><span class="v">${highlight(e.primary_name, h.match_type === "exact" ? e.primary_name : "")}${h.matched_name !== e.primary_name ? ` <span class="alias">alias “${esc(h.matched_name)}”</span>` : ""}</span></div>
+              <div class="why">${why}<span class="more">${open ? "Hide details" : "Show details"}</span></div>
             </div>
             <div class="meter">
-              <div class="num">${pct}<small>match score</small></div>
-              <div class="track"><div class="fill" data-w="${pos(pct)}"></div><div class="tick" style="left:${pos(cut.clear_below * 100)}%"></div><div class="tick" style="left:${pos(cut.hit_at * 100)}%"></div></div>
-              <div class="ticks">Marks: review from ${Math.round(cut.clear_below * 100)}, avoid from ${Math.round(cut.hit_at * 100)}</div>
+              <div class="num">${score}<small>match score</small></div>
+              <div class="vtrack"><div class="fill" data-w="${pos(score)}"></div><div class="tick" style="left:${pos(REVIEW_AT)}%"></div><div class="tick" style="left:${pos(AVOID_AT)}%"></div></div>
+              <div class="ticks">Marks: review from ${REVIEW_AT}, avoid from ${AVOID_AT}</div>
             </div>
           </button>
           <div class="detail"><div><div class="detail-in">
+            ${h.quality === "weak" ? `<p class="weak">OFAC marks this alias as weak: a loose or partial name it lists only for reference. Matches on weak aliases are often false alarms.</p>` : ""}
             <dl>
-              <dt>Name</dt><dd>${esc(c.caption)}</dd>
-              <dt>Match score</dt><dd>${num(c.score)} out of 1</dd>
-              <dt>Listed on</dt><dd>${plural(n, "list")}</dd>
+              ${row("List", esc(listLabel(e.source_list)) + (e.source_ref ? `, entry ${esc(e.source_ref)}` : ""))}
+              ${row("Type", esc(e.entity_type))}
+              ${row("Program", esc(e.program))}
+              ${row("Listed", esc(e.listed_date))}
+              ${row("Country", esc((e.countries || []).join(", ")))}
+              ${row("Date of birth", esc((e.dobs || []).join("; ")))}
+              ${row("Place of birth", esc(e.place_of_birth))}
+              ${row("Identifiers", ids)}
+              ${row("Downloaded", esc(fmt(e.fetched_at)))}
             </dl>
-            ${n ? listsHtml(c.datasets) : ""}
-            <div class="src">
-              <button class="main" type="button" data-verify="${esc(c.caption)}" data-url="${esc(url)}">Check on OpenSanctions</button>
-              <button type="button" data-copy="${esc(c.caption)}">Copy listed name</button>
+            ${(() => { const s = SOURCE[e.source_list]; if (!s) return ""; return `<div class="src">
+              <button class="main" type="button" data-verify="${esc(e.primary_name)}" data-url="${esc(s.url)}">Check on ${esc(s.site)}</button>
+              <button type="button" data-copy="${esc(e.primary_name)}">Copy listed name</button>
+              ${e.source_url ? `<a href="${esc(e.source_url)}" download>Download data file <small>XML, ${esc(s.size)}</small></a>` : ""}
             </div>
-            <p class="src-note">“Check on OpenSanctions” copies the listed name and opens its entry, with the source and update date of every list it is on.</p>
+            <p class="src-note">“Check on ${esc(s.site)}” copies the listed name and opens the official page, so you can paste it in and see the government’s own entry.</p>`; })()}
           </div></div></div>
         </div>`;
       }).join("");
 
-      // What the records are about. The sentence says it first, in the user's own terms.
-      const kinds = KINDS.filter(k => possible.some(c => kindsOf(c.topics).includes(k)));
-      const kindsHtml = kinds.length ? `<section class="sect kinds-sec"><div class="mhead">What kind of listing is this?</div>
-          <p class="kindline">The data we found is related to ${esc(joinWords(kinds.map(k => k.phrase)))}.</p>
-          <ul class="kinds">${kinds.map(k => `<li><span class="kind ${k.key}">${esc(k.label)}</span><span>${esc(k.text)}</span></li>`).join("")}</ul></section>` : "";
-
-      // Unknown: say why, say what was still checked, and give the person something to do.
-      const why0 = res.band === "unknown" ? unavailable(res.match_error) : null;
-      const unHtml = res.band === "unknown" ? `<section class="sect unavail"><div class="mhead">Why this is Unknown</div>
-          <p>${esc(why0.cause)}</p>
-          <p><strong>What we could still check:</strong> ${un.status === "disagree" && un.best
-            ? `our own copy of the UN Security Council list found a <b>possible match</b>: ${esc(un.best.matched_name)} (closeness ${num(un.best.score)}). Treat this name as a possible match until it is checked properly.`
-            : un.status === "unavailable" ? `nothing. ${esc(cap(un.reason || ""))}.`
-            : "our own copy of the UN Security Council list has no name close to this one. That is one list of many, so this is still <b>not a clear result</b>."}</p>
-          <div class="mhead sub">Check it by hand in the meantime</div>
-          <div class="src">${MANUAL.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join("")}
-            <button type="button" data-copy="${esc(typed)}">Copy the name</button></div>
-        </section>` : "";
-
-      const steps = [res.band === "unknown" ? why0.fix : null, rep.next_step, ...(STEPS[res.band] || [])].filter(Boolean);
-      const reasons = res.band !== "clear" && (res.reasons || []).length
-        ? `<ul class="reasons">${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
-      let why = more("What we screened", fieldsHtml(res.parsed || {}), (res.parsed || {}).source !== "model") + reportHtml(rep);
-      if (weak.length) {
-        why += more(`Closest names we looked at (${weak.length}). None is close enough to count`,
-          weak.map(c => `<details class="candidate"><summary>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)} · score ${num(c.score)} · on ${plural((c.datasets || []).length, "list")}</summary>${(c.datasets || []).length ? listsHtml(c.datasets) : ""}</details>`).join(""));
-      }
-      why += more(`UN cross-check: ${esc(un.status)}`, `<p class="hint">${esc(cap(un.reason || ""))}.${
-        un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p>`);
-
-      const dates = `${res.as_of ? `Sanctions data as of ${esc(res.as_of)}.` : "No live sanctions data date for this result."} UN list from ${esc(un.list_date || "not loaded")}.`;
-      const proof = `<section class="sect proof" aria-labelledby="proof-title">
-          <div class="mhead" id="proof-title">Proof for your records<small>Show this to your bank or insurer. It says which lists, which date, and what matched.</small></div>
-          <dl>
-            <dt>Checked at</dt><dd>${esc(fmt(res.checked_at))}</dd>
-            <dt>Data dates</dt><dd>${dates}</dd>
-            <dt>Record</dt><dd>${esc(res.screen_id)}</dd>
-          </dl>
-          ${(rep.sources || []).length ? `<div class="srcs"><strong>Sources</strong>${sourcesHtml(rep.sources)}</div>` : ""}
-          <div class="src">
-            <button type="button" id="copyLink">Copy record link</button>
-            <a href="${auditUrl(res.screen_id)}" target="_blank" rel="noopener">View full audit record</a>
-          </div>
-          <p class="hint">${esc(DATA_LIMIT)} ${esc(res.disclaimer)}</p>
-        </section>`;
-
       $("result").innerHTML = `
         <section class="record ${v.cls} reveal">
           <div>
-            <p class="for">Result for <b>${esc(typed)}</b></p>
-            <p class="meaning">${esc(res.band === "unknown" ? `${v.line} ${why0.cause}` : v.line)}</p>
-            ${res.band === "clear" ? `<p class="scope">${esc(SCOPE)}</p>` : ""}
-            ${reasons}
-            ${!res.live && res.fetched_at ? `<p class="note">The live check failed, so this is the saved result from ${esc(fmt(res.fetched_at))}.</p>` : ""}
+            <p class="for">Result for <b>${esc(query)}</b></p>
+            <p class="meaning">${esc(res.message || v.line)}</p>
             <div class="actions">
               <button class="ghost" type="button" id="print">Print record</button>
               <button class="ghost" type="button" id="copySum">Copy summary</button>
@@ -1076,40 +761,28 @@
               <span class="stampline">Checked ${esc(fmt(res.checked_at))}</span>
             </div>
           </div>
-          <div class="stamp" aria-label="Verdict: ${esc(word)}"><div><div class="w">${res.band === "clear" ? "&#10003; " : ""}${esc(word)}</div><div class="s">${v.sub}</div></div></div>
+          <div class="stamp" aria-label="Verdict: ${esc(v.word)}"><div><div class="w">${v.word}</div><div class="s">${v.sub}</div></div></div>
           ${v.cls === "clear" ? `<div class="burst" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => {
               const a = (i / 18) * Math.PI * 2, d = 90 + (i % 3) * 30;
               const c = ["#14936b", "#5b4bdb", "#f2b84b", "#7bd3b2"][i % 4];
               return `<i style="background:${c};--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d}px;animation-delay:${.35 + (i % 5) * .02}s"></i>`;
             }).join("")}</div>` : ""}
         </section>
-        ${possible.length ? `<div class="matches-wrap"><div class="mhead">${possible.length === 1 ? "1 possible match" : possible.length + " possible matches"}</div><div class="matches">${matches}</div></div>` : ""}
-        ${kindsHtml}
-        ${unHtml}
-        <section class="sect"><div class="mhead">What to do next</div>
-          <ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>
-        <section class="sect"><div class="mhead">Why we think so</div>${why}</section>
-        ${proof}`;
+        ${hits.length ? `<div class="matches-wrap"><div class="mhead">${hits.length === 1 ? "1 possible match" : hits.length + " possible matches"}</div><div class="matches">${matches}</div></div>` : ""}`;
 
       requestAnimationFrame(() => requestAnimationFrame(() =>
         document.querySelectorAll(".track .fill").forEach(f => f.style.width = f.dataset.w + "%")));
       $("print").onclick = () => window.print();
       $("copySum").onclick = async () => {
         const lines = [
-          `TradeCheck result for: ${typed}`,
-          `Verdict: ${word} (${v.line})`,
+          `TradeCheck result for: ${query}`,
+          `Verdict: ${v.word.replace("*", "")} (${v.line})`,
           `Checked: ${fmt(res.checked_at)}`,
-          dates.replace(/<[^>]+>/g, ""),
-          ...possible.map(c => `Possible match: ${c.caption}, score ${num(c.score)}, on ${plural((c.datasets || []).length, "list")}`),
-          `Record: ${location.origin}${auditUrl(res.screen_id)}`,
-          DATA_LIMIT,
+          `Lists checked: ${(res.lists_screened || []).map(l => `${listLabel(l.source_list)} (downloaded ${fmt(l.fetched_at)})`).join("; ") || "none"}`,
+          ...hits.map(h => `Possible match: ${h.entity.primary_name} on ${listLabel(h.entity.source_list)}, score ${Math.round(h.score)}`),
           res.disclaimer || "",
         ].filter(Boolean);
         toast(await copyText(lines.join("\n")) ? "Summary copied. Paste it into an email or your records." : "Couldn’t copy here. Use Print record instead.");
-      };
-      $("copyLink").onclick = async () => {
-        const url = location.origin + auditUrl(res.screen_id);
-        toast(await copyText(url) ? "Record link copied." : `Couldn’t copy. The link is: ${url}`);
       };
       const stamp = document.querySelector(".record .stamp"), rec = document.querySelector(".record");
       if (stamp && !reduced && matchMedia("(hover: hover)").matches) {
@@ -1125,10 +798,10 @@
       });
       document.querySelectorAll("[data-verify]").forEach(b => b.onclick = async () => {
         const ok = await copyText(b.dataset.verify);
-        window.open(safeUrl(b.dataset.url), "_blank", "noopener");
+        window.open(b.dataset.url, "_blank", "noopener");
         toast(ok ? `Copied “${b.dataset.verify}”. Paste it into the search on the page that just opened.` : `Search for “${b.dataset.verify}” on the page that just opened.`);
       });
-      $("again").onclick = () => { voyage.reset(); voyage.say("Ready to check. Each buoy is one jurisdiction’s sanctions lists."); drawRail(); q.value = ""; drawReadback(); window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); q.focus(); };
+      $("again").onclick = () => { voyage.reset(); voyage.say("Ready to check. Each buoy is one sanctions list."); drawRail(); q.value = ""; drawReadback(); window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); q.focus(); };
       document.querySelectorAll(".match .head").forEach(b => b.onclick = () => {
         const m = b.parentElement, open = m.classList.toggle("open");
         b.setAttribute("aria-expanded", open);
@@ -1137,7 +810,19 @@
       offerJump();
     }
 
-    // ---------- "See your result" instead of auto-scroll ----------
+    function paintRail(res) {
+      const screened = new Set((res.lists_screened || []).map(l => l.source_list));
+      for (const l of LISTS) {
+        const el = $("L-" + l.key); if (!el) continue;
+        const hits = (res.hits || []).filter(h => h.entity.source_list === l.key);
+        const avoid = hits.some(h => h.level === "avoid");
+        if (!screened.has(l.key)) { el.className = "list"; el.querySelector(".state span").textContent = "Not loaded"; continue; }
+        el.className = "list " + (avoid ? "hit-avoid" : hits.length ? "hit-review" : "ok");
+        el.querySelector(".state span").textContent = avoid ? "Listed" : hits.length ? `${hits.length} to review` : "No match";
+      }
+    }
+
+    /* ---------- "See your result" instead of auto-scroll ---------- */
     function hideJump() { $("jump").classList.remove("show"); }
     function offerJump(target = $("result")) {
       const r = target.getBoundingClientRect();
@@ -1145,14 +830,11 @@
     }
     window.addEventListener("scroll", () => { if ($("jump").classList.contains("show") && $("result").getBoundingClientRect().top < window.innerHeight - 160) hideJump(); }, { passive: true });
 
-    // ---------- Several names ----------
-    // Each name is a full screen: a model call, a match and sometimes a report, so one
-    // takes 2-45 seconds and spends credits. The batch is capped, and runs one at a time.
-    const BATCH_MAX = 10;
-    const parseNames = () => [...new Set($("names").value.split(/\n|;/).map(s => s.trim()).filter(Boolean))].slice(0, BATCH_MAX);
+    /* ---------- Several names ---------- */
+    const parseNames = () => [...new Set($("names").value.split(/\n|;/).map(s => s.trim()).filter(Boolean))].slice(0, 50);
     $("names").addEventListener("input", () => {
-      const all = new Set($("names").value.split(/\n|;/).map(s => s.trim()).filter(Boolean)).size;
-      $("ncount").textContent = (all === 1 ? "1 name" : `${all} names`) + (all > BATCH_MAX ? ` (the first ${BATCH_MAX} will be checked)` : "");
+      const n = parseNames().length;
+      $("ncount").textContent = n === 1 ? "1 name" : `${n} names` + (n === 50 ? " (up to 50 at a time)" : "");
     });
     let batchResults = [];
     async function checkAll() {
@@ -1176,130 +858,64 @@
         voyage.sail(START_AT + ((END_AT - START_AT) * (i + .5)) / names.length, 300);
         const tr = document.querySelector(`#brows tr[data-i="${i}"]`);
         try {
-          const res = await api("/screen", { question: names[i] }); batchResults[i] = res;
-          const word = verdictOf(res), v = VERDICT[word]; counts[word]++;
-          const top = (res.candidates || [])[0];
-          const hasMatch = top && top.score >= cutoffs(res).clear_below;
+          const r = await fetch("/screen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: names[i] }) });
+          if (!r.ok) throw new Error(`Server answered ${r.status}`);
+          const res = await r.json(); batchResults[i] = res;
+          const v = VERDICT[res.verdict] || VERDICT.Unknown; counts[res.verdict in counts ? res.verdict : "Unknown"]++;
+          const top = (res.hits || [])[0];
           tr.className = "row " + v.cls;
-          tr.innerHTML = `<td>${esc(names[i])}</td><td class="c-v"><span class="mini">${esc(word)}</span></td>
-            <td class="c-top topm">${hasMatch ? `${esc(top.caption)}, score ${num(top.score)}` : res.band === "unknown" ? "Couldn’t check" : "No match on any list"}</td>
+          tr.innerHTML = `<td>${esc(names[i])}</td><td class="c-v"><span class="mini">${v.word}</span></td>
+            <td class="c-top topm">${top ? `${esc(top.entity.primary_name)}, score ${Math.round(top.score)}` : "No match on any list"}</td>
             <td class="c-open"><span class="open-link">Open</span></td>`;
-          remember(names[i], word);
+          remember(res.query || names[i], res.verdict);
         } catch (err) {
           tr.className = "row unknown";
           tr.innerHTML = `<td>${esc(names[i])}</td><td class="c-v"><span class="mini">Error</span></td><td class="c-top topm">${esc(err.message)}</td><td class="c-open"></td>`;
           counts.Unknown++;
         }
         $("pbar").style.width = `${((i + 1) / names.length) * 100}%`;
-        $("bsum").innerHTML = [["Avoid", "avoid"], ["Caution", "review"], ["Clear", "clear", "Clear"], ["Unknown", "unknown"]]
+        $("bsum").innerHTML = [["Avoid", "avoid"], ["Caution", "review", "Review"], ["Clear", "clear", "Clear*"], ["Unknown", "unknown"]]
           .filter(([k]) => counts[k]).map(([k, c, label]) => `<span class="pill ${c}"><b>${counts[k]}</b>${label || k}</span>`).join("");
         await sleep(120);
       }
       $("ptext").textContent = `Done. Checked ${names.length} ${names.length === 1 ? "name" : "names"}. Select a row to see its full result.`;
       btn.disabled = false; btn.textContent = "Check all names";
       const worst = counts.Avoid ? "Avoid" : counts.Caution ? "Caution" : counts.Unknown ? "Unknown" : "Clear";
-      const worstRes = batchResults.filter(Boolean).find(r => verdictOf(r) === worst);
-      if (worstRes) paintRail(worstRes);
+      const all = { verdict: worst, lists_screened: (batchResults.find(Boolean) || {}).lists_screened || [], hits: batchResults.flatMap(r => (r && r.hits) || []) };
+      paintRail(all);
       await voyage.sail(END_AT, 500);
-      $("port").className = "port " + VERDICT[worst].cls;
+      $("port").className = "port " + (VERDICT[worst] || VERDICT.Unknown).cls;
       voyage.bubble(worst === "Clear" ? "All cleared!" : "Convoy checked");
       voyage.say(`Convoy checked: ${counts.Avoid} stopped, ${counts.Caution} held for review, ${counts.Clear} cleared.`);
-      loadQueue();
     }
     $("checkAll").addEventListener("click", checkAll);
     $("batchOut").addEventListener("click", e => {
       const tr = e.target.closest("tr.row"); if (!tr) return;
       const res = batchResults[Number(tr.dataset.i)]; if (!res) return;
       hideJump();
-      paintRail(res); voyage.reset(); voyage.finish(res); showDates(res); render(res);
+      paintRail(res); voyage.reset(); voyage.finish(res); render(res);
     });
 
     function setMode(many) {
       $("t-one").setAttribute("aria-selected", !many); $("t-many").setAttribute("aria-selected", many);
       $("one").hidden = many; $("many").hidden = !many; $("batchOut").hidden = !many;
       $("result").innerHTML = ""; drawRail(); voyage.reset(); hideJump();
-      voyage.say(many ? "Paste several names and the whole convoy sails through." : "Ready to check. Each buoy is one jurisdiction’s sanctions lists.");
+      voyage.say(many ? "Paste several names and the whole convoy sails through." : "Ready to check. Each buoy is one sanctions list.");
       (many ? $("names") : q).focus();
     }
     $("t-one").onclick = () => setMode(false);
     $("t-many").onclick = () => setMode(true);
 
-    // ---------- Review queue ----------
-    // Refresh the queue panel. Runs on page load and after every screen or decision.
-    async function loadQueue() {
-      try {
-        const items = await api("/queue");
-        $("queue").innerHTML = items.length
-          ? `<ul class="queue">${items.map(i => `<li><span>${esc(i.question)} · score ${num(i.score)}</span>
-               <button class="ghost" type="button" data-id="${esc(i.screen_id)}">Review</button></li>`).join("")}</ul>`
-          : `<p class="hint">No cases waiting for review.</p>`;
-      } catch (err) {
-        $("queue").innerHTML = `<p class="err">Couldn’t load the queue: ${esc(err.message)}</p>`;
-      }
-    }
-
-    // Open a queue case from its audit record: the query beside the top candidate, the
-    // report, and the decision buttons.
-    async function openCase(id) {
-      const ev = {};  // the screen's events by step
-      for (const e of await api(auditUrl(id))) ev[e.step] = e.data;
-      const top = ((ev.layer1 || {}).candidates || [])[0];
-      const topHtml = top
-        ? `<dl><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
-             <dt>Score</dt><dd>${num(top.score)}</dd><dt>Listed on</dt><dd>${plural(top.datasets.length, "list")}</dd></dl>
-           ${top.datasets.length ? listsHtml(top.datasets) : ""}`
-        : `<p class="hint">The matcher returned no candidate.</p>`;
-      $("case").innerHTML = `
-        <div class="grid2">
-          <div class="panel"><h3>The query</h3>${fieldsHtml((ev.input || {}).parsed || {})}</div>
-          <div class="panel"><h3>Top candidate</h3>${topHtml}</div>
-        </div>
-        <p class="hint">In review because: ${((ev.layer2 || {}).reasons || []).map(esc).join(" · ")}</p>
-        ${ev.layer3 ? `<div>${reportHtml(ev.layer3)}${(ev.layer3.sources || []).length
-          ? more("Sources", sourcesHtml(ev.layer3.sources)) : ""}</div>` : ""}
-        <div id="rv" class="panel">
-          <h3>Decision</h3>
-          <label for="reviewer" class="hint">Your name</label>
-          <input id="reviewer" type="text" />
-          <label for="note" class="hint">Why? e.g. different date of birth</label>
-          <textarea id="note" rows="3"></textarea>
-          <div class="buttons">
-            <button class="primary" type="button" data-decision="confirm">Confirm match</button>
-            <button class="ghost" type="button" data-decision="dismiss">Dismiss as false positive</button>
-          </div>
-          <p id="rvmsg" class="hint"></p>
-        </div>`;
-      // Plain buttons, not a form: Enter in a field must never submit an irreversible decision.
-      $("rv").addEventListener("click", async e => {
-        const decision = e.target.dataset && e.target.dataset.decision;
-        if (!decision) return;
-        try {
-          const res = await api(`/review/${encodeURIComponent(id)}`, {
-            decision, note: $("note").value, reviewer: $("reviewer").value,
-          });
-          $("case").innerHTML = `<p class="hint">Recorded: ${esc(res.decision)}, status ${esc(res.status)}.
-            <a href="${auditUrl(id)}" target="_blank" rel="noopener">View audit record</a></p>`;
-          loadQueue();
-        } catch (err) {
-          $("rvmsg").innerHTML = `<span class="err">${esc(err.message)}</span>`;
-        }
-      });
-    }
-    // One listener for the whole queue: each Review button carries its screen ID.
-    $("queue").addEventListener("click", e => {
-      const id = e.target.dataset && e.target.dataset.id;
-      if (id) openCase(id).catch(err => { $("case").innerHTML = `<p class="err">${esc(err.message)}</p>`; });
-    });
-
-    // ---------- Wiring ----------
+    /* ---------- Wiring ---------- */
     const submit = () => { const n = q.value.trim(); if (n) check(n); else q.focus(); };
     // Handle the button and Enter key directly, so search also works where form submission is blocked (e.g. sandboxed previews).
     form.addEventListener("submit", e => { e.preventDefault(); submit(); });
     go.addEventListener("click", submit);
     q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); submit(); } });
+    q.addEventListener("input", drawReadback);
     $("chips").addEventListener("click", e => {
       const b = e.target.closest("[data-q]"); if (!b) return;
-      q.value = b.dataset.q; check(b.dataset.q);
+      q.value = b.dataset.q; drawReadback(); check(b.dataset.q);
     });
     document.addEventListener("keydown", e => {
       if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) { e.preventDefault(); const t = $("one").hidden ? $("names") : q; t.focus(); t.select(); }

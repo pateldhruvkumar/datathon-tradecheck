@@ -5,3 +5,4 @@ lxml>=5.0
 requests>=2.31
 truststore>=0.10; python_version >= "3.10"
 pytest>=8.0
+anyascii>=0.3

@@ -69,7 +69,9 @@ def screen(question: str) -> dict:
     live = bool(match and match["live"])
     fetched_at = match["fetched_at"] if match else None
     # Just what the page and the audit log need. The full candidates stay in `match` for Layer 3.
-    candidates = [{"id": c["id"], "caption": c.get("caption"), "score": c["score"], "datasets": c.get("datasets", [])}
+    # "topics" says what kind of listing it is (sanction, role.pep, crime, ...); the page turns them into plain words.
+    candidates = [{"id": c["id"], "caption": c.get("caption"), "score": c["score"], "datasets": c.get("datasets", []),
+                   "topics": (c.get("properties") or {}).get("topics", [])}
                   for c in (match["candidates"] if match else [])]
     audit.log(screen_id, "layer1", {
         "collection": layer1_yente.COLLECTION, "algorithm": layer1_yente.ALGORITHM,
@@ -103,12 +105,15 @@ def screen(question: str) -> dict:
         "band": band["band"],
         "label": layer2.LABEL[band["band"]],
         "score": band["score"],
+        "cutoffs": band["cutoffs"],
         "reasons": band["reasons"],
         "status": status,
         "candidates": candidates,
         "un_check": un,
         "live": live,
         "fetched_at": fetched_at,
+        # Why the live match failed and nothing was saved (None otherwise); the page explains it.
+        "match_error": error,
         "report": report,
         # The startup data date only describes a live match. A replayed match is as old as its
         # saved result (fetched_at), and an Unknown result used no sanctions data at all.
