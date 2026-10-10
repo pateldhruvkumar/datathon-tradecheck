@@ -7,7 +7,8 @@ lowercase, strip legal suffixes (Ltd, PLC, SA de CV, ...), fold accents.
 from __future__ import annotations
 
 import re
-import unicodedata
+
+from anyascii import anyascii
 
 # Legal-entity suffixes to strip from the END of a normalized name.
 # Multi-word phrases are matched before single tokens (see _SUFFIX_PHRASES ordering).
@@ -36,9 +37,8 @@ _WS_RE = re.compile(r"\s+")
 
 
 def fold_accents(text: str) -> str:
-    """Strip diacritics via NFKD decomposition (é -> e, ü -> u)."""
-    decomposed = unicodedata.normalize("NFKD", text)
-    return decomposed.encode("ascii", "ignore").decode("ascii")
+    """Convert any script to plain Latin letters (é -> e, Людмила -> Lyudmila)."""
+    return anyascii(text)
 
 
 def normalize_name(raw: str | None) -> str:

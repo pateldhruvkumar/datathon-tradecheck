@@ -68,8 +68,14 @@ def test_agree_when_neither_finds_anything():
     assert (un["status"], un["best"]) == ("agree", None)
 
 
-def test_a_name_without_latin_letters_is_unavailable():
+def test_a_cyrillic_name_is_transliterated_and_still_matched():
     un = layer1_un.check(_q("Хава Панга Мандро"), NO_CANDIDATES)
+    assert un["status"] == "disagree"
+    assert un["best"]["matched_name"] == "KHAWA PANGA MANDRO"
+
+
+def test_a_name_without_any_letters_is_unavailable():
+    un = layer1_un.check(_q("!!! ???"), NO_CANDIDATES)
     assert (un["status"], un["reason"]) == ("unavailable", "the name has no Latin letters to compare")
 
 
