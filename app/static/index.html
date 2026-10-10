@@ -6,312 +6,577 @@
   <title>TradeCheck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,800;1,9..144,500&family=Figtree:wght@400;500;600;700;800&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* One column for a business owner: the answer first, then the five lists, what to do
-       next, why we think so, and the proof for their records. The look comes from the
-       design/preview.html redesign (iris palette, Fraunces + Figtree, verdict stamp); the
-       content and behaviour are Dhruv's. System fonts take over if Google Fonts is offline. */
     :root {
-      --bg: #f5f6fb; --surface: #ffffff; --ink: #1f1b3d; --muted: #66638a; --line: #e3e2f0;
-      --accent: #5b4bdb; --accent-ink: #ffffff; --accent-soft: #ece9ff; --accent-strong: #4a3bc9;
-      --avoid: #b3173f; --avoid-bg: #fde8ee;
-      --caution: #94580a; --caution-bg: #fff2dc;
-      --clear: #0f7a58; --clear-bg: #e0f5ec;
-      --unknown: #596078; --unknown-bg: #eceef4;
-      --track: #efeef6;
+      --bg: #f5f6fb;
+      --card: #ffffff;
+      --ink: #1f1b3d;
+      --soft: #6a6788;
+      --line: #e3e2f0;
+      --iris: #5b4bdb;
+      --iris-wash: #ece9ff;
+      --avoid: #d6335a;   --avoid-wash: #fde8ee;
+      --review: #d98a12;  --review-wash: #fff2dc;
+      --clear: #14936b;   --clear-wash: #e0f5ec;
+      --unknown: #7d8199; --unknown-wash: #eceef4;
+      --signal: var(--iris); --signal-wash: var(--iris-wash);
+      --serif: "Fraunces", Georgia, "Times New Roman", serif;
+      --sans: "Figtree", "Segoe UI", system-ui, sans-serif;
       --shadow: 0 1px 2px rgba(31, 27, 61, .06), 0 8px 24px -12px rgba(31, 27, 61, .18);
-      --display: "Fraunces", Georgia, "Times New Roman", serif;
-      --body: "Figtree", "Segoe UI", system-ui, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #14122a; --surface: #1d1b38; --ink: #ece9ff; --muted: #a9a6c9; --line: #322f58;
-        --accent: #a99fff; --accent-ink: #15122e; --accent-soft: #29254f; --accent-strong: #c3bbff;
-        --avoid: #ff9eb3; --avoid-bg: #34171f;
-        --caution: #f3c463; --caution-bg: #2c2412;
-        --clear: #7fe0b4; --clear-bg: #123024;
-        --unknown: #b6bcd0; --unknown-bg: #232640;
-        --track: #2b2850; --shadow: 0 8px 24px -12px rgba(0, 0, 0, .6);
-        color-scheme: dark;
-      }
     }
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); padding: 24px 16px 72px; font-variant-numeric: tabular-nums; }
-    a { color: var(--accent); text-underline-offset: 3px; }
-    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
-    .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
-    .wrap > * { min-width: 0; }
-    #out { display: grid; gap: 28px; }
-    #out:empty { display: none; }
-    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+      font: 400 17px/1.55 var(--sans); font-variant-numeric: tabular-nums;
+    }
+    .wrap { max-width: 1060px; margin: 0 auto; padding: 24px 24px 80px; }
+    :focus-visible { outline: 3px solid var(--iris); outline-offset: 3px; border-radius: 8px; }
+    button { font-family: inherit; cursor: pointer; }
 
-    /* ---------- Top and hero ---------- */
-    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
-    .brand { display: flex; align-items: center; gap: 10px; font: 600 22px/1 var(--display); letter-spacing: -.01em; }
-    .brand svg { width: 30px; height: 30px; flex: none; }
-    header p { margin: 0; font-size: 14px; color: var(--muted); }
-
-    .hero { position: relative; padding: 28px 0 0; min-height: 190px; transition: min-height .4s ease, padding .4s ease; }
-    .hero h1 { margin: 0; font: 600 clamp(32px, 5vw, 54px)/1.04 var(--display); letter-spacing: -.025em; max-width: 15ch; position: relative; transition: font-size .4s ease; }
-    .hero h1 em { font-style: italic; font-weight: 500; color: var(--accent); }
-    .hero .sub { margin: 14px 0 0; max-width: 50ch; color: var(--muted); font-size: 18px; position: relative; }
-    body.searched .hero { min-height: 0; padding-top: 6px; }
-    body.searched .hero h1 { font-size: clamp(24px, 3vw, 32px); max-width: none; }
-    body.searched .hero .sub { display: none; }
-    body.searched .routes { width: 26%; opacity: .6; top: -10px; }
-
-    .routes { position: absolute; right: -8px; top: 0; width: 44%; max-width: 440px; height: auto; pointer-events: none; transition: width .4s ease, opacity .4s ease; }
-    .routes .route { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .45; animation: dash 3s linear infinite; }
-    .routes .city .pulse { fill: var(--accent); opacity: .25; transform-box: fill-box; transform-origin: center; animation: ping 2.4s ease-out infinite; }
-    .routes .city circle:not(.pulse) { fill: var(--accent); }
-    .routes text { font: 600 11px var(--body); fill: var(--muted); }
-    .routes pattern circle { fill: var(--line); }
-    @keyframes dash { to { stroke-dashoffset: -36; } }
-    @keyframes ping { from { transform: scale(.6); opacity: .45; } to { transform: scale(2.6); opacity: 0; } }
-
-    .hint { color: var(--muted); font-size: 14px; margin: 0; }
-    .note { color: var(--caution); font-size: 14px; margin: 0; }
-    .err { color: var(--avoid); margin: 0; }
-    h2 { margin: 0 0 12px; font: 600 24px/1.2 var(--display); letter-spacing: -.01em; text-wrap: balance; }
-    h2 small { display: block; font: 400 15px/1.5 var(--body); color: var(--muted); letter-spacing: 0; margin-top: 4px; }
-
-    /* ---------- The ask bar ---------- */
-    form#f { display: grid; gap: 10px; }
-    .ask { display: flex; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 10px; box-shadow: var(--shadow); transition: border-color .2s, box-shadow .2s; }
-    .ask:focus-within { border-color: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft), var(--shadow); }
-    .ask input { flex: 1 1 320px; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--ink); font: 500 clamp(18px, 2.4vw, 22px) var(--body); padding: 12px 14px; }
-    .ask input::placeholder { color: var(--muted); opacity: .75; }
-    .ask button { border: 0; border-radius: 12px; padding: 0 28px; min-height: 56px; background: var(--accent); color: var(--accent-ink); font: 700 17px var(--body); transition: transform .12s, background .2s; }
-    .ask button:hover { background: var(--accent-strong); }
-    .ask button:active { transform: scale(.97); }
-    .ask button:disabled { opacity: .6; cursor: progress; }
-    button { font: 700 16px var(--body); color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
-    button.soft { color: var(--accent); background: var(--accent-soft); }
-    button:disabled { opacity: .6; cursor: default; }
-    input[type=text], textarea { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%; }
-    input[type=text]:focus, textarea:focus { border-color: var(--accent); outline: none; }
-    .ask input[type=text] { border: 0; width: auto; padding: 12px 14px; border-radius: 0; }
-
-    .working { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); color: var(--muted); }
-    .spinner { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .7s linear infinite; flex: none; }
+    /* ---------- Boot loader: shown until list data arrives ---------- */
+    #boot {
+      position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--bg);
+      transition: opacity .5s ease, visibility .5s;
+    }
+    #boot.done { opacity: 0; visibility: hidden; }
+    .boot-inner { display: grid; justify-items: center; gap: 18px; text-align: center; padding: 24px; }
+    .globe { width: 96px; height: 96px; }
+    .globe .orbit { transform-origin: 48px 48px; animation: spin 1.6s linear infinite; }
+    .boot-word { font: 600 30px/1 var(--serif); letter-spacing: -0.01em; }
+    .boot-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 15px; color: var(--soft); min-width: 260px; text-align: left; }
+    .boot-steps li { display: flex; align-items: center; gap: 10px; transition: color .2s; }
+    .boot-steps li i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: none; position: relative; }
+    .boot-steps li.on { color: var(--ink); }
+    .boot-steps li.on i { border-color: var(--iris); border-top-color: transparent; animation: spin .7s linear infinite; }
+    .boot-steps li.ok { color: var(--ink); }
+    .boot-steps li.ok i { border-color: var(--clear); background: var(--clear); }
+    .boot-steps li.ok i::after { content: ""; position: absolute; left: 5px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ---------- The answer card. Its colour comes from the band, never from the label text. ---------- */
-    .answer { position: relative; overflow: hidden; background: var(--surface); border: 1.5px solid var(--line); border-radius: 22px; box-shadow: var(--shadow);
-      display: grid; grid-template-columns: 1fr auto; gap: 16px 32px; align-items: center; padding: 34px 34px 30px; }
-    .answer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--tone); }
-    .answer.avoid { --tone: var(--avoid); --wash: var(--avoid-bg); }
-    .answer.caution { --tone: var(--caution); --wash: var(--caution-bg); }
-    .answer.clear { --tone: var(--clear); --wash: var(--clear-bg); }
-    .answer.unknown { --tone: var(--unknown); --wash: var(--unknown-bg); }
-    .atext { display: grid; gap: 10px; min-width: 0; }
-    .tag { justify-self: start; font-weight: 700; font-size: 14px; color: var(--tone); background: var(--wash); border-radius: 999px; padding: 3px 14px; }
-    .answer h2 { margin: 0; font-size: clamp(27px, 4.4vw, 40px); line-height: 1.1; letter-spacing: -.02em; }
-    .answer p { margin: 0; max-width: 56ch; }
-    .answer ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
-    .closeness { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
-    .meter { display: flex; gap: 4px; }
-    .meter i { width: 22px; height: 10px; border-radius: 3px; background: var(--track); }
-    .meter i.on { background: var(--tone); }
-    .stamp { width: 190px; height: 190px; border-radius: 50%; display: grid; place-content: center; text-align: center; color: var(--tone); background: var(--wash);
-      border: 4px solid var(--tone); box-shadow: inset 0 0 0 8px var(--wash), inset 0 0 0 10px var(--tone); transform: rotate(-8deg); animation: thump .6s cubic-bezier(.2, 1.5, .4, 1) both; }
-    .stamp .w { font: 800 32px/1.05 var(--display); letter-spacing: -.02em; }
-    .stamp .s { font-size: 13px; font-weight: 700; margin-top: 8px; letter-spacing: .04em; text-transform: uppercase; }
-    .stamp .tick { font-size: 44px; line-height: 1; margin-bottom: 4px; }
-    @keyframes thump { 0% { transform: rotate(-24deg) scale(2.2); opacity: 0; } 60% { opacity: 1; } 100% { transform: rotate(-8deg) scale(1); } }
-    .answer .atext > * { animation: rise .45s .15s ease-out both; }
-    @keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
-    .fine { font-size: 13px; color: var(--muted); }
+    /* ---------- Top ---------- */
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 600 22px/1 var(--serif); letter-spacing: -0.01em; }
+    .brand svg { width: 30px; height: 30px; }
+    .kbd { font-size: 14px; color: var(--soft); }
+    .kbd kbd { font: 600 13px/1 var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 3px 7px; margin: 0 2px; }
 
-    /* ---------- The five lists ---------- */
-    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    .tile { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 12px; display: grid; gap: 2px; align-content: start; min-width: 0; box-shadow: var(--shadow); }
-    .tile b { font: 800 26px/1 var(--display); }
-    .tile span { font-size: 13px; color: var(--muted); }
-    .tile em { font-style: normal; font-weight: 700; font-size: 14px; margin-top: 6px; }
-    .tiles.avoid { --tone: var(--avoid); } .tiles.caution { --tone: var(--caution); }
-    .tile.listed { border-color: var(--tone); }
-    .tile.listed em { color: var(--tone); }
-    .tile.weak em { color: var(--muted); }
-    .tile.none em { color: var(--clear); }
-    .tiles.clear .tile.none { background: var(--clear-bg); border-color: transparent; box-shadow: none; }
-    .tiles.clear .tile.none em::before { content: "\2713\00a0"; }
-    .tile.unchecked em { color: var(--unknown); }
-    .tiles + .hint { margin-top: 10px; }
+    /* ---------- Hero ---------- */
+    .hero { position: relative; padding: 36px 0 4px; min-height: 230px; transition: min-height .4s ease, padding .4s ease; }
+    h1 {
+      margin: 0; font-family: var(--serif); font-weight: 600; letter-spacing: -0.025em; line-height: 1.02;
+      font-size: clamp(34px, 4.6vw, 58px); max-width: 16ch; position: relative; transition: font-size .4s ease; font-variation-settings: "SOFT" 50;
+    }
+    h1 em { font-style: italic; font-weight: 500; }
+    .hero p { margin: 14px 0 0; max-width: 52ch; color: var(--soft); font-size: 18px; position: relative; }
+
+    .ask {
+      margin-top: 34px; position: relative; display: flex; gap: 10px; flex-wrap: wrap;
+      background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 10px;
+      box-shadow: var(--shadow); transition: border-color .2s, box-shadow .2s;
+    }
+    .ask:focus-within { border-color: var(--iris); box-shadow: 0 0 0 6px var(--iris-wash), var(--shadow); }
+    .ask label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .ask input {
+      flex: 1 1 340px; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--ink);
+      font-family: var(--sans); font-size: clamp(19px, 2.6vw, 24px); font-weight: 500; padding: 12px 14px;
+    }
+    .ask input::placeholder { color: var(--soft); opacity: .7; }
+    .ask #go {
+      position: relative; overflow: hidden; border: 0; border-radius: 12px; padding: 0 30px; min-height: 58px;
+      background: var(--iris); color: #fff; font-size: 17px; font-weight: 700; letter-spacing: .01em;
+      transition: transform .12s, background .2s;
+    }
+    .ask #go:hover { background: #4a3bc9; }
+    .ask #go:active { transform: scale(.97); }
+    .ask #go:disabled { cursor: progress; background: #8a7fe6; }
+    .spinner { display: inline-block; width: 16px; height: 16px; margin-right: 10px; vertical-align: -2px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+
+    .readback { min-height: 52px; padding: 16px 6px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 15px; color: var(--soft); }
+    .readback .lbl { margin-right: 4px; }
+    .tok { color: var(--ink); font-weight: 600; background: var(--iris-wash); padding: 3px 10px; border-radius: 999px; animation: pop .2s cubic-bezier(.3, 1.6, .5, 1) both; }
+    .tok.fold { background: #fff; box-shadow: inset 0 0 0 1.5px var(--iris); }
+    .tok.cut { color: var(--soft); background: transparent; text-decoration: line-through; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line); }
+    @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 15px; color: var(--soft); }
+    .chip { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 14px; font-size: 15px; font-weight: 500; transition: border-color .15s, transform .15s; }
+    .chip:hover { border-color: var(--iris); transform: translateY(-1px); }
+    .chip .v { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+
+    .sk { display: inline-block; border-radius: 6px; background: linear-gradient(90deg, #eceaf6 0%, #f7f6fd 50%, #eceaf6 100%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; color: transparent !important; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    @keyframes fillbar { from { width: 0; } to { width: 100%; } }
+
+    /* ---------- Trade-route map behind the headline ---------- */
+    .routes { position: absolute; right: -10px; top: 0; width: 46%; max-width: 500px; transition: width .4s ease, opacity .4s ease; height: auto; pointer-events: none; }
+    .routes .route { fill: none; stroke: var(--iris); stroke-width: 1.6; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .45; animation: dash 3s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -36; } }
+    .routes .city circle.pulse { fill: var(--iris); opacity: .25; transform-box: fill-box; transform-origin: center; animation: ping 2.4s ease-out infinite; }
+    .routes .city:nth-of-type(2n) circle.pulse { animation-delay: 1.2s; }
+    @keyframes ping { from { transform: scale(.6); opacity: .45; } to { transform: scale(2.6); opacity: 0; } }
+    .routes text { font: 600 11px var(--sans); fill: var(--soft); }
+
+    /* ---------- Voyage track: the loader and list status in one strip ---------- */
+    .voyage { margin-top: 18px; background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 4px 18px 10px; }
+    .vtrack { position: relative; height: 122px; }
+    .sea { position: absolute; left: 0; right: 0; top: 40px; height: 14px; border-radius: 7px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14'%3E%3Cpath d='M0 7 Q10 0 20 7 T40 7 V14 H0Z' fill='%23d9d4fb'/%3E%3C/svg%3E") repeat-x;
+      animation: sea 2.5s linear infinite; }
+    @keyframes sea { to { background-position: -40px 0; } }
+    .vship { position: absolute; top: 6px; left: 3%; width: 58px; height: 42px; margin-left: -29px; transition: left .7s cubic-bezier(.45, 0, .2, 1); z-index: 2; }
+    .vship svg { width: 100%; height: 100%; display: block; animation: bob 2.6s ease-in-out infinite; transform-origin: 50% 100%; }
+    @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(2px) rotate(2deg); } }
+    .vship.stopped svg { animation: shake .45s ease-in-out 2; }
+    @keyframes shake { 25% { transform: translateX(-4px) rotate(-4deg); } 75% { transform: translateX(4px) rotate(4deg); } }
+    .vship .wake { position: absolute; right: 100%; top: 32px; width: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, #b9b0f7); transition: width .3s; }
+    .vship.moving .wake { width: 40px; }
+    .vship .bubble { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 4px); white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--ink); color: #fff; opacity: 0; transition: opacity .2s, transform .2s; }
+    .vship .bubble.show { opacity: 1; transform: translate(-50%, -2px); }
+    .stops { position: absolute; inset: 0; }
+    .vtrack .list { position: absolute; top: 34px; width: 20%; margin-left: -10%; text-align: center; }
+    .vtrack .list .buoy { width: 26px; height: 26px; margin: 0 auto; border-radius: 50%; background: var(--card); border: 3px solid #cfcbe6; position: relative; transition: background .3s, border-color .3s, transform .3s; }
+    .vtrack .list .buoy::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: #cfcbe6; transition: background .3s; }
+    .vtrack .list .lbl { margin-top: 8px; font-size: 14px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 6px; }
+    .vtrack .list .lbl svg { width: 18px; height: 12px; border-radius: 2px; box-shadow: 0 0 0 1px var(--line); flex: none; }
+    .vtrack .list .meta { font-size: 13px; color: var(--soft); }
+    .vtrack .list .count { font-weight: 600; color: var(--ink); }
+    .vtrack .list .state { font-size: 13px; font-weight: 700; color: var(--soft); min-height: 18px; }
+    .vtrack .list.scanning .buoy { border-color: var(--iris); transform: scale(1.15); }
+    .vtrack .list.scanning .buoy::after { background: var(--iris); animation: blink .5s steps(2) infinite; }
+    .vtrack .list.scanning .state { color: var(--iris); }
+    .vtrack .list.ok .buoy { border-color: var(--clear); } .vtrack .list.ok .buoy::after { background: var(--clear); } .vtrack .list.ok .state { color: var(--clear); }
+    .vtrack .list.hit-review .buoy { border-color: var(--review); transform: scale(1.12); } .vtrack .list.hit-review .buoy::after { background: var(--review); } .vtrack .list.hit-review .state { color: var(--review); }
+    .vtrack .list.hit-avoid .buoy { border-color: var(--avoid); transform: scale(1.12); } .vtrack .list.hit-avoid .buoy::after { background: var(--avoid); } .vtrack .list.hit-avoid .state { color: var(--avoid); }
+    @keyframes blink { 50% { opacity: .25; } }
+    .port { position: absolute; top: 14px; right: 0; width: 26px; height: 40px; }
+    .port .pole { position: absolute; left: 4px; top: 0; width: 3px; height: 40px; background: var(--ink); border-radius: 2px; }
+    .port .flag { position: absolute; left: 7px; top: 2px; width: 18px; height: 12px; background: #cfcbe6; clip-path: polygon(0 0, 100% 50%, 0 100%); transform-origin: left center; animation: wave 1.2s ease-in-out infinite alternate; transition: background .3s; }
+    @keyframes wave { to { transform: scaleX(.75) skewY(6deg); } }
+    .port.clear .flag { background: var(--clear); } .port.avoid .flag { background: var(--avoid); } .port.review .flag { background: var(--review); }
+    .vfoot { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; font-size: 14px; color: var(--soft); border-top: 1px dashed var(--line); padding-top: 8px; }
+    .vfoot #vmsg { color: var(--ink); font-weight: 600; }
+
+    /* "See your result" helper instead of auto-scrolling */
+    #jump { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; z-index: 55;
+      border: 0; border-radius: 999px; padding: 12px 20px; background: var(--iris); color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 10px 30px -10px rgba(91,75,219,.7); transition: opacity .25s, transform .25s; }
+    #jump.show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); animation: nudge 1.4s ease-in-out .3s 2; }
+    @keyframes nudge { 50% { transform: translate(-50%, -5px); } }
+
+    /* ---------- Result ---------- */
+    /* After the first check the hero tucks away so results sit right under the search */
+    body.searched .hero { min-height: 0; padding-top: 18px; }
+    body.searched .hero h1 { font-size: clamp(26px, 2.8vw, 34px); max-width: none; }
+    body.searched .hero p { display: none; }
+    body.searched .routes { width: 30%; opacity: .7; top: -14px; }
+    body.searched .modes { margin-top: 18px; }
+    #result { margin-top: 18px; scroll-margin-top: 16px; }
+    #batchOut { margin-top: 6px; }
+    .avoid   { --signal: var(--avoid);   --signal-wash: var(--avoid-wash); }
+    .review  { --signal: var(--review);  --signal-wash: var(--review-wash); }
+    .clear   { --signal: var(--clear);   --signal-wash: var(--clear-wash); }
+    .unknown { --signal: var(--unknown); --signal-wash: var(--unknown-wash); }
+
+    .record {
+      position: relative; background: var(--card); border-radius: 22px; box-shadow: var(--shadow);
+      border: 1.5px solid var(--line); overflow: hidden;
+      display: grid; grid-template-columns: 1fr auto; gap: 20px 32px; align-items: center; padding: 34px 36px;
+    }
+    .record::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--signal); }
+    .record .for { color: var(--soft); font-size: 15px; margin: 0 0 6px; }
+    .record .for b { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+    .record .meaning { margin: 0; font-size: 20px; font-weight: 500; max-width: 42ch; }
+    .record .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; align-items: center; }
+    .record .stampline { font-size: 14px; color: var(--soft); }
+    .ghost { border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 9px 16px; font-size: 15px; font-weight: 600; }
+    .ghost:hover { border-color: var(--ink); }
+
+    /* The verdict stamp */
+    .stamp {
+      width: 230px; height: 230px; border-radius: 50%; display: grid; place-items: center; text-align: center;
+      color: var(--signal); background: var(--signal-wash);
+      border: 4px solid var(--signal); box-shadow: inset 0 0 0 8px var(--signal-wash), inset 0 0 0 10px var(--signal);
+      transform: rotate(-8deg);
+    }
+    .stamp .w { font: 800 40px/1 var(--serif); letter-spacing: -0.02em; }
+    .stamp .s { font-size: 13px; font-weight: 700; margin-top: 8px; letter-spacing: .04em; }
+    .reveal .stamp { animation: thump .6s cubic-bezier(.2, 1.5, .4, 1) both; }
+    .reveal.avoid .stamp { animation: thump .6s cubic-bezier(.2, 1.5, .4, 1) both, wobble .5s .55s ease-in-out; }
+    @keyframes thump { 0% { transform: rotate(-24deg) scale(2.2); opacity: 0; } 60% { opacity: 1; } 100% { transform: rotate(-8deg) scale(1); } }
+    @keyframes wobble { 25% { transform: rotate(-11deg); } 50% { transform: rotate(-5deg); } 75% { transform: rotate(-10deg); } 100% { transform: rotate(-8deg); } }
+    .reveal .meaning, .reveal .actions, .reveal + .matches-wrap { animation: rise .45s .2s ease-out both; }
+    @keyframes rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* Clear celebration */
+    .burst { position: absolute; pointer-events: none; right: 150px; top: 50%; }
+    .burst i { position: absolute; width: 9px; height: 9px; border-radius: 2px; opacity: 0; animation: fly .9s ease-out forwards; }
+    @keyframes fly { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(320deg); } }
+
+    /* ---------- Matches ---------- */
+    .mhead { font: 600 22px/1.2 var(--serif); margin: 34px 4px 14px; }
+    .matches { display: grid; gap: 14px; }
+    .match { background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+    .match.avoid { border-color: color-mix(in srgb, var(--avoid) 40%, var(--line)); }
+    .match.review { border-color: color-mix(in srgb, var(--review) 40%, var(--line)); }
+    .match button.head {
+      all: unset; box-sizing: border-box; width: 100%; cursor: pointer;
+      display: grid; grid-template-columns: 1fr 240px; gap: 18px 32px; align-items: center; padding: 20px 22px;
+    }
+    .match button.head:focus-visible { outline: 3px solid var(--iris); outline-offset: -3px; }
+    .compare { display: grid; gap: 8px; min-width: 0; }
+    .compare .row { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; }
+    .compare .k { font-size: 13px; color: var(--soft); font-weight: 600; }
+    .compare .v { font-size: 19px; font-weight: 600; overflow-wrap: anywhere; }
+    .compare mark { background: var(--signal-wash); color: var(--ink); box-shadow: inset 0 -2px 0 var(--signal); padding: 0 1px; border-radius: 2px; }
+    .compare .alias { font-size: 14px; font-weight: 500; color: var(--soft); }
+    .why { font-size: 15px; color: var(--soft); margin-top: 2px; }
+    .more { color: var(--iris); font-weight: 600; margin-left: 6px; white-space: nowrap; }
+    .more::after { content: " ▾"; display: inline-block; transition: transform .2s; }
+    .match.open .more::after { transform: rotate(180deg); }
+
+    .meter { display: grid; gap: 8px; }
+    .meter .num { font: 800 38px/1 var(--serif); letter-spacing: -0.02em; color: var(--signal); }
+    .meter .num small { font: 500 14px/1 var(--sans); color: var(--soft); margin-left: 8px; letter-spacing: 0; }
+    .track { position: relative; height: 10px; border-radius: 5px; background: #efeef6; }
+    .track .fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--signal); width: 0; transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+    .track .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--ink); opacity: .5; }
+    .ticks { font-size: 13px; color: var(--soft); }
+
+    .detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+    .detail > div { overflow: hidden; }
+    .match.open .detail { grid-template-rows: 1fr; }
+    .detail-in { padding: 4px 22px 22px; border-top: 1px dashed var(--line); margin: 0 22px; padding-left: 0; padding-right: 0; padding-top: 16px; }
+    .weak { background: var(--review-wash); border-radius: 10px; padding: 10px 14px; font-size: 15px; margin: 0 0 14px; }
+    dl { display: grid; grid-template-columns: 150px 1fr; gap: 8px 18px; margin: 0; font-size: 15px; }
+    dt { color: var(--soft); } dd { margin: 0; overflow-wrap: anywhere; }
+    a { color: var(--iris); }
+
+    .error { background: var(--card); border: 1.5px solid var(--avoid); border-radius: 16px; padding: 18px 22px; box-shadow: var(--shadow); }
+    .error b { color: var(--avoid); }
+
+    footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--soft); max-width: 70ch; }
+
+    /* Mode tabs */
+    .modes { display: inline-flex; gap: 4px; padding: 4px; margin-top: 34px; background: #ebeaf5; border-radius: 12px; }
+    .modes button { border: 0; background: transparent; color: var(--soft); font-size: 15px; font-weight: 600; padding: 8px 16px; border-radius: 9px; transition: background .2s, color .2s; }
+    .modes button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(31, 27, 61, .12); }
+    .ask { margin-top: 12px; }
+    [hidden] { display: none !important; }
+
+    /* Batch */
+    .batch { margin-top: 12px; background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: var(--shadow); }
+    .batch:focus-within { border-color: var(--iris); }
+    .batch textarea { width: 100%; min-height: 150px; resize: vertical; border: 0; outline: 0; font: 500 18px/1.6 var(--sans); color: var(--ink); background: transparent; padding: 6px 8px; }
+    .batch-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px dashed var(--line); padding-top: 12px; }
+    .batch-foot span { color: var(--soft); font-size: 15px; }
+    .primary { border: 0; border-radius: 12px; padding: 0 26px; min-height: 52px; background: var(--iris); color: #fff; font-size: 17px; font-weight: 700; }
+    .primary:hover { background: #4a3bc9; } .primary:disabled { background: #8a7fe6; cursor: progress; }
+    .progress { height: 8px; border-radius: 4px; background: #efeef6; overflow: hidden; margin: 18px 0 8px; }
+    .progress div { height: 100%; width: 0; background: var(--iris); border-radius: 4px; transition: width .3s ease; }
+    .ptext { font-size: 15px; color: var(--soft); }
+    .summary { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 12px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px; font-size: 15px; font-weight: 600; background: var(--signal-wash); color: var(--signal); }
+    .pill b { font: 800 18px/1 var(--serif); }
+    table.bt { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+    table.bt th { text-align: left; font-size: 13px; color: var(--soft); font-weight: 600; padding: 0 16px; }
+    table.bt td { background: var(--card); padding: 14px 16px; border-top: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); vertical-align: middle; }
+    table.bt td:first-child { border-left: 1.5px solid var(--line); border-radius: 12px 0 0 12px; font-weight: 600; overflow-wrap: anywhere; }
+    table.bt td:last-child { border-right: 1.5px solid var(--line); border-radius: 0 12px 12px 0; text-align: right; white-space: nowrap; }
+    table.bt tr.row { cursor: pointer; animation: rise .3s ease-out both; }
+    table.bt tr.row:hover td { border-color: var(--iris); }
+    table.bt tr.row.pending td { color: var(--soft); }
+    .mini { display: inline-block; font: 800 15px/1 var(--serif); color: var(--signal); border: 2px solid var(--signal); border-radius: 8px; padding: 6px 10px; transform: rotate(-4deg); background: var(--signal-wash); }
+    .topm { color: var(--soft); font-size: 15px; }
+    .open-link { color: var(--iris); font-weight: 600; font-size: 15px; }
+
+    /* Source actions */
+    .src { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .src button, .src a { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 8px 14px; font-size: 15px; font-weight: 600; text-decoration: none; }
+    .src .main { background: var(--iris); border-color: var(--iris); color: #fff; }
+    .src .main:hover { background: #4a3bc9; }
+    .src button:not(.main):hover, .src a:not(.main):hover { border-color: var(--ink); }
+    .src small { font-weight: 500; color: var(--soft); }
+    .src-note { font-size: 14px; color: var(--soft); margin: 10px 0 0; }
+
+    /* Toast */
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 60;
+      background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 15px; font-weight: 500; box-shadow: 0 10px 30px -10px rgba(31,27,61,.5); transition: opacity .25s, transform .25s; max-width: calc(100vw - 32px); }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .stamp { transition: transform .2s ease-out; }
+
+    @media (max-width: 800px) {
+      .wrap { padding: 18px 16px 64px; }
+      .hero { padding-top: 28px; min-height: 0; }
+      .routes { display: none; }
+      body.searched .hero h1 { font-size: 24px; }
+      .vtrack { height: 140px; }
+      .ask #go { width: 100%; }
+      .record { grid-template-columns: 1fr; padding: 28px 20px 24px; }
+      .stamp { width: 170px; height: 170px; grid-row: 1; justify-self: start; }
+      .stamp .w { font-size: 31px; }
+      .burst { right: auto; left: 85px; top: 110px; }
+      .match button.head { grid-template-columns: 1fr; padding: 18px; }
+      .compare .row { grid-template-columns: 1fr; gap: 0; }
+      .detail-in { margin: 0 18px; }
+      dl { grid-template-columns: 1fr; gap: 0; } dd { margin-bottom: 8px; }
+      .kbd { display: none; }
+      .voyage { padding: 2px 10px 10px; }
+      .vtrack { height: 140px; }
+      .vtrack .list .lbl { font-size: 13px; flex-direction: column; gap: 2px; }
+      .vtrack .list .meta { font-size: 12px; }
+      .vship { width: 48px; height: 35px; margin-left: -24px; top: 12px; }
+      table.bt thead { display: none; }
+      table.bt tr.row { display: grid; grid-template-columns: 1fr auto; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; margin-bottom: 8px; }
+      table.bt td, table.bt td:first-child, table.bt td:last-child { border: 0; border-radius: 0; padding: 10px 14px; background: transparent; text-align: left; }
+      table.bt td.c-top { grid-column: 1 / -1; padding-top: 0; }
+      table.bt td.c-open { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    /* ---------- Additions for the live app (everything above is the original design) ---------- */
+    .vtrack .list .lbl .code { font: 800 11px/1 var(--sans); padding: 3px 6px; border-radius: 6px; background: var(--iris-wash); color: var(--iris); letter-spacing: .03em; }
+    .vtrack .list .lbl { flex-wrap: wrap; }
+    .vtrack .list .meta { font-size: 12px; }
+    .vtrack .list .state { font-size: 12px; }
+    .mhead small { display: block; font: 400 15px/1.5 var(--sans); color: var(--soft); margin-top: 4px; letter-spacing: 0; }
+    .hint { color: var(--soft); font-size: 14px; margin: 8px 0 0; }
+    .note { color: var(--review); font-size: 14px; margin: 10px 0 0; }
+    .err { color: var(--avoid); margin: 0; }
+    .record .reasons { margin: 10px 0 0; padding-left: 20px; font-size: 14px; color: var(--soft); }
+    .record .note { margin-top: 10px; }
+    .sect { margin-top: 34px; }
+    .sect .mhead { margin-top: 0; }
 
     ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
-    ol.steps li { counter-increment: step; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px 14px 62px; position: relative; }
+    ol.steps li { counter-increment: step; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px 14px 62px; position: relative; box-shadow: var(--shadow); }
     ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 12px; width: 32px; height: 32px; border-radius: 50%;
-      background: var(--accent-soft); color: var(--accent); font: 800 16px/32px var(--display); text-align: center; }
+      background: var(--iris-wash); color: var(--iris); font: 800 16px/32px var(--serif); text-align: center; }
 
-    .why > p { margin: 0 0 12px; }
-    .why > .note { margin-bottom: 12px; }
-    details.more { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; }
-    details.more + details.more { margin-top: 8px; }
-    details.more > summary { cursor: pointer; padding: 14px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    details.more { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    details.more + details.more { margin-top: 10px; }
+    details.more > summary { cursor: pointer; padding: 14px 18px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
     details.more > summary::-webkit-details-marker { display: none; }
-    details.more > summary::after { content: "+"; font: 800 20px/1 var(--display); color: var(--accent); }
+    details.more > summary::after { content: "+"; font: 800 20px/1 var(--serif); color: var(--iris); }
     details.more[open] > summary::after { content: "\2013"; }
-    .det { padding: 0 16px 16px; min-width: 0; }
+    .det { padding: 0 18px 18px; min-width: 0; }
     .det > :first-child { margin-top: 0; }
+    .sect > p { margin: 0 0 12px; }
     ul.claims, ol.claims { margin: 0; padding-left: 20px; }
     ul.claims li, ol.claims li { margin: 4px 0; }
-    .cite { font-size: 13px; text-decoration: none; background: var(--accent-soft); border-radius: 4px; padding: 0 5px; }
-    dl.kv { display: grid; grid-template-columns: 150px 1fr; gap: 4px 16px; margin: 0; font-size: 15px; }
-    dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; overflow-wrap: anywhere; }
-    .det .note, .det .hint { margin-top: 8px; }
+    .cite { font-size: 13px; text-decoration: none; background: var(--iris-wash); border-radius: 4px; padding: 0 5px; }
     .tablewrap { overflow-x: auto; }
-    table.lists { width: 100%; border-collapse: collapse; font-size: 15px; margin: 4px 0; }
+    table.lists { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0 4px; }
     table.lists th, table.lists td { text-align: left; padding: 6px 12px 6px 0; border-top: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
-    table.lists th { color: var(--muted); font-size: 13px; }
+    table.lists th { color: var(--soft); font-size: 13px; }
     table.lists tr:first-child th { border-top: 0; }
     table.lists tr.group th { color: var(--ink); font-size: 15px; padding-top: 12px; }
     details.candidate { padding: 8px 0; border-top: 1px solid var(--line); }
     details.candidate:first-child { border-top: 0; padding-top: 0; }
     details.candidate summary { cursor: pointer; }
 
-    .proof { border: 2px dashed var(--line); border-radius: 18px; padding: 18px 20px; display: grid; gap: 12px; }
-    .proof h2 { margin: 0; }
-    .proof .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .proof { border: 2px dashed var(--line); border-radius: 18px; padding: 20px 22px; display: grid; gap: 12px; margin-top: 34px; }
+    .proof .mhead { margin: 0; }
+    .proof .src { margin-top: 0; }
+    .srcs ol { margin-top: 6px; }
 
-    .answers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .answers div { border-radius: 14px; padding: 12px; font-size: 14px; }
-    .answers b { display: block; font: 600 17px var(--display); }
-    .answers .avoid { background: var(--avoid-bg); color: var(--avoid); }
-    .answers .caution { background: var(--caution-bg); color: var(--caution); }
-    .answers .clear { background: var(--clear-bg); color: var(--clear); }
-    .answers .unknown { background: var(--unknown-bg); color: var(--unknown); }
-
-    .queue { list-style: none; margin: 0; padding: 4px 16px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; }
-    .queue li { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
-    .queue li:first-child { border-top: 0; }
-    .queue button { padding: 6px 14px; font-size: 14px; }
+    .queue-sec { margin-top: 44px; }
+    .queue-sec .mhead { margin-top: 0; }
+    ul.queue { list-style: none; margin: 0; padding: 4px 18px; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    ul.queue li { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+    ul.queue li:first-child { border-top: 0; }
+    ul.queue .ghost { padding: 6px 14px; font-size: 14px; }
     #case { display: grid; gap: 16px; margin-top: 16px; }
     #case:empty { display: none; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .panel { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px; min-width: 0; }
-    .panel h3 { margin: 0 0 8px; font: 600 18px var(--display); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 16px 18px; min-width: 0; box-shadow: var(--shadow); }
+    .panel h3 { margin: 0 0 8px; font: 600 19px var(--serif); }
+    .panel dl { grid-template-columns: 110px 1fr; }
     #rv { display: grid; gap: 10px; }
+    #rv input, #rv textarea { font: inherit; color: var(--ink); background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; }
+    #rv input:focus, #rv textarea:focus { border-color: var(--iris); outline: none; }
     #rv .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    #rv .primary { min-height: 0; padding: 10px 18px; font-size: 16px; }
 
-    footer { font-size: 13px; color: var(--muted); }
-
-    @media (max-width: 760px) {
-      .routes { display: none; }
-      .hero { padding-top: 16px; min-height: 0; }
-      .ask button { width: 100%; }
-      .answer { grid-template-columns: 1fr; padding: 26px 20px 22px; }
-      .stamp { width: 150px; height: 150px; grid-row: 1; justify-self: start; }
-      .stamp .w { font-size: 22px; } .stamp .s { font-size: 11px; } .stamp .tick { font-size: 30px; }
-      .tiles { grid-template-columns: repeat(2, 1fr); }
-      .answers { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 800px) {
+      .vtrack .list .meta { display: none; }
+      .vtrack .list .lbl { font-size: 12px; }
+      .vtrack .list .state { font-size: 11px; }
       .grid2 { grid-template-columns: 1fr; }
-      dl.kv { grid-template-columns: 110px 1fr; }
+      ol.steps li { padding-left: 58px; }
     }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition: none !important; }
-    }
+    @media print { .queue-sec, #jump, #toast { display: none !important; } details.more > .det { display: block; } }
+
     @media print {
-      .hero, .ask, .answers, #queue, #case, footer { display: none !important; }
+      #boot, .hero, .voyage, footer, .kbd, .actions button, .more { display: none !important; }
       body { background: #fff; }
-      .answer, .tile, details.more { box-shadow: none; }
-      details.more > .det { display: block; }
+      .record, .match { box-shadow: none; }
+      .detail { grid-template-rows: 1fr !important; }
+      * { animation: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
+  <div id="boot" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <svg class="globe" viewBox="0 0 96 96" aria-hidden="true">
+        <circle cx="48" cy="48" r="30" fill="#ece9ff" stroke="#5b4bdb" stroke-width="3"/>
+        <path d="M18 48h60M48 18c-10 9-10 51 0 60M48 18c10 9 10 51 0 60" fill="none" stroke="#5b4bdb" stroke-width="2.5" opacity=".55"/>
+        <g class="orbit"><circle cx="48" cy="8" r="6" fill="#5b4bdb"/></g>
+      </svg>
+      <div class="boot-word">TradeCheck</div>
+      <ul class="boot-steps">
+        <li id="b1"><i></i>Connecting to the screening service</li>
+        <li id="b2"><i></i>Loading the review queue</li>
+        <li id="b3"><i></i>Getting ready to check names</li>
+      </ul>
+    </div>
+  </div>
+
+<div class="wrap">
+    <header class="top">
       <div class="brand">
         <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5b4bdb"/><path d="M9.5 16.5l4.2 4.2 8.8-9.4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         TradeCheck
       </div>
-      <p>Free sanctions check across the Canadian, US, EU, UK and UN lists</p>
+      <div class="kbd">Press <kbd>/</kbd> to search, <kbd>Esc</kbd> to clear</div>
     </header>
 
     <section class="hero">
       <svg class="routes" viewBox="0 0 560 250" aria-hidden="true">
-        <defs><pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3"/></pattern></defs>
+        <defs><pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="#d9d6ee"/></pattern></defs>
         <rect width="560" height="250" fill="url(#dots)" rx="24"/>
         <path id="r1" class="route" d="M70 78 Q 200 10 340 62"/>
         <path id="r2" class="route" d="M70 78 Q 250 230 500 120"/>
         <path id="r3" class="route" d="M130 175 Q 240 110 340 62"/>
         <path id="r4" class="route" d="M175 95 Q 300 150 430 150"/>
-        <g class="city"><circle class="pulse" cx="70" cy="78" r="6"/><circle cx="70" cy="78" r="4"/><text x="58" y="66" text-anchor="end">Vancouver</text></g>
-        <g class="city"><circle class="pulse" cx="175" cy="95" r="6"/><circle cx="175" cy="95" r="4"/><text x="183" y="88">Toronto</text></g>
-        <g class="city"><circle class="pulse" cx="130" cy="175" r="6"/><circle cx="130" cy="175" r="4"/><text x="122" y="196" text-anchor="middle">Mexico</text></g>
-        <g class="city"><circle class="pulse" cx="340" cy="62" r="6"/><circle cx="340" cy="62" r="4"/><text x="350" y="56">Rotterdam</text></g>
-        <g class="city"><circle class="pulse" cx="430" cy="150" r="6"/><circle cx="430" cy="150" r="4"/><text x="430" y="172" text-anchor="middle">Mumbai</text></g>
-        <g class="city"><circle class="pulse" cx="500" cy="120" r="6"/><circle cx="500" cy="120" r="4"/><text x="500" y="105" text-anchor="middle">Shanghai</text></g>
-        <g><path d="M-7 -3 L5 0 L-7 3 L-4 0 Z M-2 -6 L1 0 L-2 6 Z" fill="#5b4bdb"/><animateMotion dur="7s" repeatCount="indefinite" rotate="auto"><mpath href="#r1"/></animateMotion></g>
+        <path id="r5" class="route" d="M70 78 Q 90 140 130 175"/>
+        <g class="city"><circle class="pulse" cx="70" cy="78" r="6"/><circle cx="70" cy="78" r="4" fill="#5b4bdb"/><text x="58" y="66" text-anchor="end">Vancouver</text></g>
+        <g class="city"><circle class="pulse" cx="175" cy="95" r="6"/><circle cx="175" cy="95" r="4" fill="#5b4bdb"/><text x="183" y="88">Toronto</text></g>
+        <g class="city"><circle class="pulse" cx="130" cy="175" r="6"/><circle cx="130" cy="175" r="4" fill="#5b4bdb"/><text x="122" y="196" text-anchor="middle">Mexico</text></g>
+        <g class="city"><circle class="pulse" cx="340" cy="62" r="6"/><circle cx="340" cy="62" r="4" fill="#5b4bdb"/><text x="350" y="56">Rotterdam</text></g>
+        <g class="city"><circle class="pulse" cx="430" cy="150" r="6"/><circle cx="430" cy="150" r="4" fill="#5b4bdb"/><text x="430" y="172" text-anchor="middle">Mumbai</text></g>
+        <g class="city"><circle class="pulse" cx="500" cy="120" r="6"/><circle cx="500" cy="120" r="4" fill="#5b4bdb"/><text x="500" y="105" text-anchor="middle">Shanghai</text></g>
+        <!-- Movers -->
+        <g><path d="M-7 -3 L5 0 L-7 3 L-4 0 Z M-2 -6 L1 0 L-2 6 Z" fill="#1f1b3d"/><animateMotion dur="7s" repeatCount="indefinite" rotate="auto"><mpath href="#r1"/></animateMotion></g>
         <g><rect x="-8" y="-3.5" width="16" height="7" rx="2" fill="#5b4bdb"/><rect x="-5" y="-6" width="5" height="3" fill="#f2b84b"/><animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#r2"/></animateMotion></g>
         <g><rect x="-7" y="-3" width="14" height="6" rx="2" fill="#14936b"/><animateMotion dur="11s" repeatCount="indefinite" rotate="auto" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r3"/></animateMotion></g>
+        <g><path d="M-7 -3 L5 0 L-7 3 L-4 0 Z M-2 -6 L1 0 L-2 6 Z" fill="#d6335a"/><animateMotion dur="9s" begin="-3s" repeatCount="indefinite" rotate="auto"><mpath href="#r4"/></animateMotion></g>
+        <g><path d="M-7 -3 L5 0 L-7 3 L-4 0 Z M-2 -6 L1 0 L-2 6 Z" fill="#5b4bdb"/><animateMotion dur="6s" begin="-2s" repeatCount="indefinite" rotate="auto" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r5"/></animateMotion></g>
       </svg>
-      <h1>Who are you about to <em>trade</em> with?</h1>
-      <p class="sub">Check a buyer, supplier or person against the Canadian, US, EU, UK and UN sanctions lists in seconds, with the source and date behind every answer.</p>
+      <div>
+        <h1>Who are you about to <em>trade</em> with?</h1>
+        <p>Check a buyer, supplier or person against the Canadian, US, EU, UK and UN sanctions lists in seconds, with the source and date behind every answer.</p>
+      </div>
     </section>
 
-    <form id="f">
-      <label for="q" class="sr">Who are you about to trade with?</label>
-      <div class="ask">
-        <input id="q" type="text" placeholder="e.g. Can we ship to Northwind Metals FZE in Dubai?" autocomplete="off" autofocus />
-        <button id="go" type="submit">Check this name</button>
-      </div>
-      <p class="hint">Add a country or registration number if you have one. It makes the check sharper.
-        The matcher decides; the model only explains. Missing data shows as <em>Unknown</em>, never green.</p>
+    <div class="modes" role="tablist" aria-label="How many names">
+      <button type="button" role="tab" id="t-one" aria-selected="true">One name</button>
+      <button type="button" role="tab" id="t-many" aria-selected="false">Several names</button>
+    </div>
+
+    <div id="one">
+    <form id="f" class="ask" autocomplete="off">
+      <label for="q">Business or person’s name, or a question</label>
+      <input id="q" type="text" placeholder="Type a name, or ask a question" autofocus />
+      <button id="go" type="button">Check name</button>
     </form>
+    <div class="readback" id="readback" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    </div>
 
-    <div id="out" aria-live="polite"></div>
-
-    <section aria-labelledby="answers-title">
-      <h2 id="answers-title">The four answers you can get</h2>
-      <div class="answers">
-        <div class="avoid"><b>Avoid</b>Strong match. Stop and get advice.</div>
-        <div class="caution"><b>Caution</b>Close name. Someone checks first.</div>
-        <div class="clear"><b>Clear*</b>Not on the lists we checked. Good to go.</div>
-        <div class="unknown"><b>Unknown</b>We couldn't check. Not a yes.</div>
+    <div id="many" hidden>
+      <div class="batch">
+        <label for="names" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Names to check, one per line</label>
+        <textarea id="names" placeholder="Paste your buyers or suppliers, one per line (up to 10)&#10;e.g. AgroDistribuidora del Bajío SA de CV&#10;Khawa Panga Mandro&#10;Fraser Valley Honey Co."></textarea>
+        <div class="batch-foot">
+          <span id="ncount">0 names</span>
+          <button class="primary" type="button" id="checkAll">Check all names</button>
+        </div>
       </div>
+    </div>
+
+    <section class="voyage" aria-label="Lists we check">
+      <div class="vtrack">
+        <div class="sea"></div>
+        <div class="stops" id="rail"></div>
+        <div class="port" id="port" aria-hidden="true"><div class="pole"></div><div class="flag"></div></div>
+        <div class="vship" id="vship" aria-hidden="true">
+          <div class="wake"></div>
+          <div class="bubble" id="bubble"></div>
+          <svg viewBox="0 0 58 42"><rect x="40" y="6" width="5" height="9" fill="#5b4bdb"/><rect x="35" y="14" width="14" height="13" rx="2" fill="#fff" stroke="#1f1b3d" stroke-width="2"/><rect x="38" y="17" width="3" height="3" fill="#1f1b3d"/><rect x="43" y="17" width="3" height="3" fill="#1f1b3d"/>
+            <rect x="7" y="17" width="9" height="10" fill="#a49de8" stroke="#1f1b3d" stroke-width="1.6"/><rect x="16" y="17" width="9" height="10" fill="#f2b84b" stroke="#1f1b3d" stroke-width="1.6"/><rect x="25" y="17" width="9" height="10" fill="#7fd3ad" stroke="#1f1b3d" stroke-width="1.6"/>
+            <path d="M2 27 H56 L50 38 H8 Z" fill="#1f1b3d"/><rect x="5" y="33" width="48" height="2" fill="#d6335a"/></svg>
+        </div>
+      </div>
+      <div class="vfoot"><span id="vmsg">Ready to check. Each buoy is one jurisdiction’s sanctions lists.</span><span id="fresh"></span></div>
     </section>
 
-    <section aria-labelledby="queue-title">
-      <h2 id="queue-title">Waiting for review</h2>
-      <div id="queue"><p class="hint">Loading&hellip;</p></div>
+    <div id="batchOut" hidden></div>
+
+    <div id="result" aria-live="polite"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <button id="jump" type="button">See your result</button>
+
+    <section class="queue-sec" aria-labelledby="queue-title">
+      <div class="mhead" id="queue-title">Waiting for review</div>
+      <div id="queue"><p class="hint">Loading…</p></div>
       <div id="case"></div>
     </section>
 
-    <footer>Sanctions data: OpenSanctions, CC BY-NC 4.0. Not legal advice.</footer>
+    <footer>
+      Sanctions data: OpenSanctions (CC BY-NC 4.0), plus our own copy of the UN Security Council list as a cross-check. The matcher decides; the model only explains. Missing data shows as Unknown, never green. This is a screening aid, not legal advice.
+    </footer>
   </div>
 
   <script>
+  (() => {
     const $ = id => document.getElementById(id);
+    const q = $("q"), form = $("f"), go = $("go");
     // Every piece of text from the server goes through esc() before it reaches innerHTML.
-    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     // Only http(s) links become hrefs; anything else (javascript:, data:) goes nowhere.
     const safeUrl = u => /^https?:\/\//i.test(String(u ?? "")) ? String(u) : "#";
-    // A link that opens in a new tab. It escapes both the URL and the text, so pass raw values.
     const link = (url, text) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener">${esc(text)}</a>`;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const num = n => typeof n === "number" ? n.toFixed(2) : "—";
     const cap = s => s ? s[0].toUpperCase() + s.slice(1) : "";
-    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const auditUrl = id => `/audit/${encodeURIComponent(id)}`;
-    // Card colour per band. Keyed by band rather than by label, so renaming a label in
-    // tradecheck/layer2.py can't quietly turn the card grey.
-    const CLASS = { hit: "avoid", review: "caution", clear: "clear", unknown: "unknown" };
-    const LINE = {
-      hit: "Strong sanctions match.",
-      review: "Possible match, flagged for human review.",
-      clear: "Not on any sanctions list we checked, so you can go ahead.",
-      unknown: "The live check failed. Treat this as Unknown, not clear.",
-    };
-    // The word and caption on the verdict stamp. Keyed by band, like CLASS.
-    const STAMP = {
-      hit: ["Avoid", "Stop"], review: ["Caution", "Hold off"], clear: ["Clear", "Good to go"], unknown: ["Unknown", "Not checked"],
-    };
-    const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
-                      ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
+    const fmt = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); };
+    const fmtDay = iso => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
 
+    // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
+    // detail (a validation error lists each field), so callers can show it as is.
+    async function api(path, body) {
+      const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+      const r = await fetch(path, opts);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const d = data.detail;
+        throw new Error(Array.isArray(d) ? d.map(x => `${(x.loc || []).slice(-1)[0]}: ${x.msg}`).join("; ") : (d || "HTTP " + r.status));
+      }
+      return data;
+    }
+
+    // ---------- What the server's band means on this page ----------
+    // Everything is keyed by band (hit / review / clear / unknown), never by the label text,
+    // so renaming a label in tradecheck/layer2.py cannot quietly change a colour.
+    const NAME = { hit: "Avoid", review: "Caution", clear: "Clear", unknown: "Unknown" };
+    const VERDICT = {
+      Avoid:   { cls: "avoid",   sub: "ON A LIST",      line: "Strong match on a sanctions list. Stop and get advice before you go ahead." },
+      Caution: { cls: "review",  sub: "CHECK DETAILS",  line: "A close name is on a list. Someone should check it before you go ahead." },
+      Clear:   { cls: "clear",   sub: "GOOD TO GO",     line: "Good to go. This name isn’t on any sanctions list we checked. That covers these lists only, as of the dates shown." },
+      Unknown: { cls: "unknown", sub: "NOT CHECKED",    line: "We couldn’t finish the check, so this is not a clear result. Try again in a few minutes." },
+    };
+    const verdictOf = res => NAME[res.band] || "Unknown";
+    const CUTOFFS = { clear_below: 0.70, hit_at: 0.90 };  // used only if the server omits res.cutoffs
+    const cutoffs = res => res.cutoffs || CUTOFFS;
     // The steps under "What to do next". The server's next_step (review and hit only) goes
     // first; these fixed ones follow. Kept generic on purpose: no legal claims we can't back.
     const STEPS = {
@@ -325,12 +590,12 @@
       unknown: ["Try the check again in a few minutes.",
                 "Don't treat this as clear. Wait for a finished check before you go ahead."],
     };
+    const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
+                      ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
 
-    // Plain names for the OpenSanctions dataset IDs a candidate is listed in, so a first-time
-    // user sees "United States · Treasury (OFAC)" instead of "us_ofac_sdn".
+    // Plain names for the OpenSanctions dataset IDs a candidate is listed in.
     // [country or body, who publishes it, what the list is, group]
-    // ponytail: hand-written for the lists seen in the live check; an ID not here shows as is
-    // under "Other lists". If that happens often, read dataset titles from GET /catalog instead.
+    // An ID not here shows as is under "Other lists".
     const DATASETS = {
       un_sc_sanctions:         ["United Nations", "Security Council", "Consolidated sanctions list", "sanctions"],
       us_ofac_sdn:             ["United States", "Treasury (OFAC)", "Specially Designated Nationals (SDN) list", "sanctions"],
@@ -354,15 +619,14 @@
       tw_shtc:                 ["Taiwan", "Board of Foreign Trade", "High-tech export control list", "trade"],
     };
     const GROUPS = [["sanctions", "Sanctions lists"], ["trade", "Trade and contract screening lists"], ["other", "Other lists"]];
-    // The five tiles. The country name must match the first field of DATASETS.
-    const JURISDICTIONS = [["CA", "Canada", "Global Affairs Canada"], ["US", "United States", "Treasury, Commerce, State"],
-                           ["EU", "European Union", "European Commission"], ["UK", "United Kingdom", "Treasury, Foreign Office"],
-                           ["UN", "United Nations", "Security Council"]];
+    // The five stops on the voyage track. The country must match the first field of DATASETS.
+    const LISTS = [["CA", "Canada", "Global Affairs Canada"], ["US", "United States", "Treasury, Commerce, State"],
+                   ["EU", "European Union", "European Commission"], ["UK", "United Kingdom", "Treasury, Foreign Office"],
+                   ["UN", "United Nations", "Security Council"]].map(([key, country, who]) => ({ key, country, who }));
     const countryOf = id => (DATASETS[id] || [])[0];
 
-    // A candidate's datasets as a table, sanctions first. Rows are sorted by country, with the
-    // UN first because other lists often copy it. Each list name links to its OpenSanctions
-    // page, where the user can see the source and when it was last updated.
+    // A candidate's datasets as a table, sanctions first, the UN first within each group
+    // because other lists often copy it. Each list links to its OpenSanctions page.
     function listsHtml(ids) {
       const rows = ids.map(id => { const d = DATASETS[id]; return d ? [id, ...d] : [id, "—", "—", id, "other"]; })
         .sort((a, b) => (b[0] === "un_sc_sanctions") - (a[0] === "un_sc_sanctions") || a[1].localeCompare(b[1]));
@@ -380,29 +644,9 @@
       return html;
     }
 
-    // One matcher candidate: name, score and how many lists, with the table behind a click.
-    function candidateHtml(c, open) {
-      const n = c.datasets.length;
-      return `<details class="candidate"${open ? " open" : ""}><summary>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)}
-          · score ${num(c.score)} · on ${plural(n, "list")}</summary>${n ? listsHtml(c.datasets) : ""}</details>`;
-    }
-
     // One section of "Why we think so", closed unless open is set.
     const more = (title, body, open) =>
       `<details class="more"${open ? " open" : ""}><summary>${title}</summary><div class="det">${body}</div></details>`;
-
-    // GET when there's no body, otherwise POST it as JSON. Throws with FastAPI's error
-    // detail (a validation error lists each field), so callers can show it as is.
-    async function api(path, body) {
-      const opts = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-      const r = await fetch(path, opts);
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        const d = data.detail;
-        throw new Error(Array.isArray(d) ? d.map(x => `${(x.loc || []).slice(-1)[0]}: ${x.msg}`).join("; ") : (d || "HTTP " + r.status));
-      }
-      return data;
-    }
 
     // Each citation becomes a numbered link to its source. The numbers match the source list
     // in "Proof for your records".
@@ -446,7 +690,7 @@
     function fieldsHtml(p) {
       const rows = [["Type", p.schema], ["Name", p.name], ["Country", p.country], ["Birth date", p.birth_date],
                     ["Registration no.", p.registration_number]].filter(([, v]) => v);
-      let html = `<dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
+      let html = `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`;
       if (p.source === "fallback") {
         html += `<p class="note">The fields could not be extracted (${esc(p.fallback_reason)}), so the whole question was screened as a name.</p>`;
       }
@@ -456,130 +700,440 @@
       return html;
     }
 
-    // The big plain sentence at the top of the answer card.
-    function headline(res) {
-      const n = res.candidates.length ? res.candidates[0].datasets.length : 0;
-      if (res.band === "hit") return n ? `Stop. This name matches one on ${plural(n, "list")}.` : "Stop. This name is a strong sanctions match.";
-      if (res.band === "review") return n ? `Hold off for now. A very similar name is on ${plural(n, "list")}.` : "Hold off for now. A reviewer needs to check this name.";
-      if (res.band === "clear") return "Good to go. This name isn't on any sanctions list we checked.";
-      return "We couldn't finish the check. Treat this as not clear.";
+    function toast(msg) {
+      const t = $("toast"); t.textContent = msg; t.classList.add("show");
+      clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3200);
+    }
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; } catch { /* fall back below */ }
+      try {
+        const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); return ok;
+      } catch { return false; }
+    }
+    // The meter shows scores 50-100, so the two cutoffs sit well apart.
+    const pos = pct => Math.max(0, Math.min(100, (pct - 50) * 2));
+
+    // ---------- Which list each candidate is on, for the voyage track ----------
+    // A tile names the top candidate's listing first; a weaker candidate on that country's
+    // lists still shows, so "No close name" is only said when it's true.
+    function listStatus(res) {
+      const cut = cutoffs(res), [top, ...rest] = res.candidates || [];
+      const on = (c, country) => (c.datasets || []).some(id => countryOf(id) === country);
+      const out = {};
+      for (const l of LISTS) {
+        let st = { cls: "ok", text: res.band === "clear" ? "No match" : "No close name" };
+        if (res.band === "unknown") st = { cls: "", text: "Not checked" };
+        else if (res.band !== "clear" && top && top.score >= cut.clear_below && on(top, l.country)) {
+          st = res.band === "hit" ? { cls: "hit-avoid", text: "Listed" } : { cls: "hit-review", text: "Similar name" };
+        } else if (res.band !== "clear" && [top, ...rest].some(c => c && on(c, l.country))) st = { cls: "", text: "Weaker match" };
+        out[l.key] = st;
+      }
+      return out;
     }
 
-    // Closeness as five blocks, plus the cutoffs the server used.
-    function closenessHtml(res) {
-      if (typeof res.score !== "number") return "";
-      const on = Math.round(Math.min(Math.max(res.score, 0), 1) * 5);
-      const cut = res.cutoffs ? ` Clear below ${num(res.cutoffs.clear_below)}, a match at ${num(res.cutoffs.hit_at)}.` : "";
-      return `<div class="closeness"><span class="meter" aria-hidden="true">${"<i class='on'></i>".repeat(on)}${"<i></i>".repeat(5 - on)}</span>
-          Name closeness ${num(res.score)} out of 1.${cut}</div>`;
-    }
-
-    // The five tiles. A tile names the top candidate's listing first; a weaker candidate on
-    // that country's lists still shows, so "No close name" is only said when it's true.
-    function tilesHtml(res) {
-      const [top, ...rest] = res.candidates;
-      const on = (c, country) => c.datasets.some(id => countryOf(id) === country);
-      const tiles = JURISDICTIONS.map(([code, country, who]) => {
-        let cls = "none", text = res.band === "clear" ? "No match" : "No close name";
-        if (res.band === "unknown") [cls, text] = ["unchecked", "Not checked"];
-        else if (top && on(top, country)) [cls, text] = ["listed", res.band === "hit" ? "Listed" : "Similar name listed"];
-        else if (rest.some(c => on(c, country))) [cls, text] = ["weak", "Weaker match listed"];
-        return `<div class="tile ${cls}"><b>${code}</b><span>${who}</span><em>${text}</em></div>`;
+    // ---------- Voyage track ----------
+    const STOP_AT = [10, 30, 50, 70, 90], START_AT = 3, END_AT = 96;
+    function drawRail(state = {}) {
+      $("rail").innerHTML = LISTS.map((l, i) => {
+        const st = state[l.key] || { cls: "", text: "Ready" };
+        return `<div class="list ${st.cls}" id="L-${l.key}" style="left:${STOP_AT[i]}%" title="${esc(l.country + ": " + l.who)}">
+          <div class="buoy"></div>
+          <div class="lbl"><span class="code">${esc(l.key)}</span><span>${esc(l.country)}</span></div>
+          <div class="meta">${esc(l.who)}</div>
+          <div class="state"><span>${esc(st.text)}</span></div>
+        </div>`;
       }).join("");
-      const five = new Set(JURISDICTIONS.map(j => j[1]));
-      const others = top ? top.datasets.filter(id => !five.has(countryOf(id))).length : 0;
-      const extra = others ? ` The top match is also on ${plural(others, "other list")}, shown under "Why we think so".` : "";
-      return `<div class="tiles ${CLASS[res.band] || "unknown"}">${tiles}</div><p class="hint">${datesText(res)}${extra}</p>`;
+    }
+    const voyage = {
+      ship: () => $("vship"),
+      async sail(pct, ms = 720) {
+        const s = this.ship(); s.classList.add("moving"); s.style.left = pct + "%";
+        await sleep(ms); s.classList.remove("moving");
+      },
+      park(pct) { const s = this.ship(); s.style.transition = "none"; s.style.left = pct + "%"; void s.offsetWidth; s.style.transition = ""; },
+      say(text) { $("vmsg").textContent = text; },
+      bubble(text) { const b = $("bubble"); b.textContent = text; b.classList.toggle("show", !!text); },
+      reset() { this.park(START_AT); this.bubble(""); $("port").className = "port"; this.ship().classList.remove("stopped"); },
+      // Park the ship where the answer is: at the first list the top match is on, or the port.
+      async finish(res) {
+        const st = listStatus(res);
+        const stopI = LISTS.findIndex(l => st[l.key].cls === "hit-avoid" || st[l.key].cls === "hit-review");
+        if (res.band === "hit" && stopI >= 0) {
+          await this.sail(STOP_AT[stopI], 500); this.ship().classList.add("stopped");
+          this.bubble("Stopped!"); $("port").className = "port avoid";
+          this.say("Stopped: this name is on a sanctions list.");
+        } else if (res.band === "review" && stopI >= 0) {
+          await this.sail(STOP_AT[stopI], 500);
+          this.bubble("Held for review"); $("port").className = "port review";
+          this.say("Held for review: check the possible match below.");
+        } else if (res.band === "review" || res.band === "hit") {
+          await this.sail(STOP_AT[0], 500);
+          this.bubble("Held for review"); $("port").className = "port review";
+          this.say("Held for review: a person needs to check this name.");
+        } else if (res.band === "clear") {
+          await this.sail(END_AT, 800);
+          this.bubble("Cleared!"); $("port").className = "port clear";
+          this.say("Good to go: no match on the lists checked.");
+        } else {
+          this.bubble("Not checked"); this.say("We couldn’t finish the check. This is not a clear result.");
+        }
+      },
+    };
+    function paintRail(res) {
+      const st = listStatus(res);
+      for (const l of LISTS) {
+        const el = $("L-" + l.key); if (!el) continue;
+        el.className = "list " + st[l.key].cls;
+        el.querySelector(".state span").textContent = st[l.key].text;
+      }
+    }
+    function showDates(res) {
+      const bits = [res.as_of ? `Sanctions data as of ${fmtDay(res.as_of)}` : "", res.un_check && res.un_check.list_date ? `UN list from ${fmtDay(res.un_check.list_date)}` : ""].filter(Boolean);
+      $("fresh").textContent = bits.join(" · ");
     }
 
-    // No data date (Unknown, a replayed result, or the catalog didn't say): say so rather
-    // than "as of unknown".
-    function datesText(res) {
-      const as = res.as_of ? `Sanctions data as of ${esc(res.as_of)}.` : "No live sanctions data date for this result.";
-      return `${as} UN list from ${esc(res.un_check.list_date || "not loaded")}.`;
+    // ---------- Boot: hold the loader until the app answers ----------
+    async function boot() {
+      drawRail();
+      const step = (id, cls) => { $(id).className = cls; };
+      const started = performance.now();
+      step("b1", "on");
+      const alive = fetch("/health").then(r => r.ok).catch(() => false);
+      await sleep(300);
+      const ok = await alive;
+      step("b1", "ok"); step("b2", "on");
+      await loadQueue();
+      step("b2", "ok"); step("b3", "on");
+      await sleep(Math.max(0, 900 - (performance.now() - started)));
+      step("b3", "ok");
+      await sleep(200);
+      if (reduced) document.querySelectorAll("svg.routes").forEach(s => s.pauseAnimations && s.pauseAnimations());
+      $("boot").classList.add("done");
+      if (!ok) toast("Can’t reach the app. Start it with uvicorn app.main:app, then reload.");
+      q.focus();
     }
 
-    // The whole result for one screen (the POST /screen response).
+    // ---------- Read-back under the search box ----------
+    function drawReadback(parsed) {
+      if (parsed) {
+        const toks = [parsed.schema, parsed.name, parsed.country, parsed.birth_date, parsed.registration_number].filter(Boolean);
+        $("readback").innerHTML = `<span class="lbl">Screened</span>` + toks.map(t => `<span class="tok">${esc(t)}</span>`).join("") +
+          (parsed.source !== "model" ? `<span>&nbsp;(fields were not read by the model)</span>` : "");
+        return;
+      }
+      $("readback").innerHTML = `<span>Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
+    }
+
+    // ---------- Chips ----------
+    const EXAMPLES = ["Is KHAWA PANGA MANDRO sanctioned?", "Can we sell to Khawa Mandro?", "Can we ship to AgroDistribuidora del Bajío SA de CV in Mexico?"];
+    let recent = [];
+    try { recent = JSON.parse(localStorage.getItem("tc-recent") || "[]"); } catch { recent = []; }
+    const DOT = { Avoid: "var(--avoid)", Caution: "var(--review)", Clear: "var(--clear)", Unknown: "var(--unknown)" };
+    function drawChips() {
+      $("chips").innerHTML = recent.length
+        ? `<span>Recent:</span>` + recent.map(r => `<button class="chip" type="button" data-q="${esc(r.q)}"><span class="v" style="background:${DOT[r.v] || "var(--unknown)"}"></span>${esc(r.q)}</button>`).join("")
+        : `<span>Try:</span>` + EXAMPLES.map(e => `<button class="chip" type="button" data-q="${esc(e)}">${esc(e)}</button>`).join("");
+    }
+    function remember(qv, v) {
+      recent = [{ q: qv, v }, ...recent.filter(r => r.q.toLowerCase() !== qv.toLowerCase())].slice(0, 5);
+      try { localStorage.setItem("tc-recent", JSON.stringify(recent)); } catch { /* storage unavailable */ }
+      drawChips();
+    }
+
+    // ---------- Screening with the voyage ----------
+    let running = false;
+    async function check(question) {
+      if (running) return;
+      running = true; go.disabled = true; go.innerHTML = `<span class="spinner"></span>Checking`;
+      $("result").innerHTML = "";
+      drawRail(Object.fromEntries(LISTS.map(l => [l.key, { cls: "", text: "Waiting" }])));
+      document.body.classList.add("searched");
+      voyage.reset(); voyage.say("Sailing your question past each list…"); hideJump();
+
+      const request = api("/screen", { question });
+      request.catch(() => {});  // handled below; this only stops a premature unhandled-rejection warning
+
+      try {
+        for (const [i, l] of LISTS.entries()) {
+          await voyage.sail(STOP_AT[i], 380);
+          const el = $("L-" + l.key);
+          el.className = "list scanning";
+          el.querySelector(".state span").textContent = "Checking…";
+          await sleep(300);
+          el.className = "list";
+          el.querySelector(".state span").textContent = "Waiting";
+        }
+        // The animation is only indicative: the real check can take up to a minute when a
+        // report is written, so say so while the server is still working.
+        const slow = setTimeout(() => {
+          $("result").innerHTML = `<div class="record unknown"><div><p class="for">Still checking…</p><p class="meaning">A review or avoid case can take up to a minute while the cited report is written. Your result will appear here.</p></div></div>`;
+        }, 400);
+        let res;
+        try { res = await request; } finally { clearTimeout(slow); }
+        paintRail(res);
+        await voyage.finish(res);
+        showDates(res);
+        render(res);
+        drawReadback(res.parsed);
+        remember(res.question || question, verdictOf(res));
+        loadQueue();
+      } catch (err) {
+        drawRail(); voyage.reset();
+        const offline = err instanceof TypeError;
+        voyage.say(offline ? "The check didn’t run. Make sure the app is running." : "The check didn’t run.");
+        $("result").innerHTML = `<div class="error"><b>The check didn’t run.</b> ${esc(offline ? "Can’t reach the app. Make sure it is running (uvicorn app.main:app) and try again." : cap(err.message) + ".")}</div>`;
+      } finally {
+        running = false; go.disabled = false; go.textContent = "Check name";
+      }
+    }
+
+    // ---------- Result ----------
+    function highlight(text, part) {
+      const i = String(text).toLowerCase().indexOf(String(part).toLowerCase());
+      if (!part || i < 0) return esc(text);
+      return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + part.length)) + "</mark>" + esc(text.slice(i + part.length));
+    }
     function render(res) {
-      const un = res.un_check, rep = res.report || {}, top = res.candidates[0];
-      const status = res.status === "unknown" ? "" : ` · ${esc(res.status.replace("_", " "))}`;
-      const clear = res.band === "clear";
-      const [stampWord, stampLine] = STAMP[res.band] || STAMP.unknown;
-      // A clear result says what was compared and when, in plain words. It leaves out the
-      // "closest name" and the score reasons: a weak candidate there only confuses.
-      const who = res.parsed.name ? `"${esc(res.parsed.name)}"` : "This name";
-      const body = clear
-        ? `<p>${who} wasn't found on the Canadian, US, EU, UK or UN sanctions lists, and nothing on them is close to it.
-             You can go ahead.</p>`
-        : `<p>${top ? `The closest name we found is "${esc(top.caption)}". ` : ""}${esc(LINE[res.band])}</p>`;
-      let answer = `<section class="answer ${CLASS[res.band] || "unknown"}" aria-label="Result">
-          <div class="atext">
-            <span class="tag">${clear ? "Clear · good to go" : `${esc(res.label)}${status}`}</span>
-            <h2>${esc(headline(res))}</h2>
-            ${body}
-            ${closenessHtml(res)}
-            ${!clear && res.reasons.length ? `<ul>${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-            ${clear ? `<p class="fine">* Clear means no match on the lists above, as of the dates shown below. Check again before each new shipment.</p>` : ""}
-            ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
-          </div>
-          <div class="stamp" aria-hidden="true">${clear ? `<span class="tick">&#10003;</span>` : ""}<span class="w">${esc(stampWord)}</span><span class="s">${esc(stampLine)}</span></div>
-        </section>`;
+      const word = verdictOf(res), v = VERDICT[word];
+      const cut = cutoffs(res), cands = res.candidates || [], rep = res.report || {}, un = res.un_check || {};
+      const typed = (res.parsed && res.parsed.name) || res.question || "";
+      // Only candidates at or above the clear cutoff count as possible matches. Weaker ones
+      // are shown, folded away, so nobody reads a loose name as a hit.
+      const possible = cands.filter(c => c.score >= cut.clear_below), weak = cands.filter(c => c.score < cut.clear_below);
 
-      const lists = `<section><h2>The lists we checked<small>Canada and the four lists Canadian exporters are most often asked about</small></h2>${tilesHtml(res)}</section>`;
+      const matches = possible.map((c, i) => {
+        const lvl = c.score >= cut.hit_at ? "avoid" : "review";
+        const n = (c.datasets || []).length;
+        const pct = Math.round(c.score * 100), open = i === 0;
+        const why = lvl === "avoid" ? "A very close match to a listed name." : "Similar to a listed name. A person should check it.";
+        const url = "https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/";
+        return `<div class="match ${lvl} ${open ? "open" : ""}">
+          <button class="head" type="button" aria-expanded="${open}">
+            <div class="compare">
+              <div class="row"><span class="k">You typed</span><span class="v">${esc(typed)}</span></div>
+              <div class="row"><span class="k">Listed as</span><span class="v">${highlight(c.caption || "", typed)}</span></div>
+              <div class="why">${why} On ${plural(n, "list")}.<span class="more">${open ? "Hide details" : "Show details"}</span></div>
+            </div>
+            <div class="meter">
+              <div class="num">${pct}<small>match score</small></div>
+              <div class="track"><div class="fill" data-w="${pos(pct)}"></div><div class="tick" style="left:${pos(cut.clear_below * 100)}%"></div><div class="tick" style="left:${pos(cut.hit_at * 100)}%"></div></div>
+              <div class="ticks">Marks: review from ${Math.round(cut.clear_below * 100)}, avoid from ${Math.round(cut.hit_at * 100)}</div>
+            </div>
+          </button>
+          <div class="detail"><div><div class="detail-in">
+            <dl>
+              <dt>Name</dt><dd>${esc(c.caption)}</dd>
+              <dt>Match score</dt><dd>${num(c.score)} out of 1</dd>
+              <dt>Listed on</dt><dd>${plural(n, "list")}</dd>
+            </dl>
+            ${n ? listsHtml(c.datasets) : ""}
+            <div class="src">
+              <button class="main" type="button" data-verify="${esc(c.caption)}" data-url="${esc(url)}">Check on OpenSanctions</button>
+              <button type="button" data-copy="${esc(c.caption)}">Copy listed name</button>
+            </div>
+            <p class="src-note">“Check on OpenSanctions” copies the listed name and opens its entry, with the source and update date of every list it is on.</p>
+          </div></div></div>
+        </div>`;
+      }).join("");
 
       const steps = [rep.next_step, ...(STEPS[res.band] || [])].filter(Boolean);
-      const next = `<section><h2>What to do next</h2><ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>`;
-
-      // The fields start open when they weren't extracted by the model, since that changes
-      // what was actually screened.
-      let why = more("What we screened", fieldsHtml(res.parsed), res.parsed.source !== "model") + reportHtml(rep);
-      if (clear && top) {
-        // Weak candidates are not matches. Say so, so nobody reads one as a hit.
-        why += more(`Closest names we looked at (${res.candidates.length}). None is close enough to count`,
-                    res.candidates.map(c => candidateHtml(c, false)).join(""));
-      } else if (top) {
-        why += more(`Every list the top match is on (${top.datasets.length})`, top.datasets.length ? listsHtml(top.datasets) : `<p class="hint">No lists recorded.</p>`);
+      const reasons = res.band !== "clear" && (res.reasons || []).length
+        ? `<ul class="reasons">${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : "";
+      let why = more("What we screened", fieldsHtml(res.parsed || {}), (res.parsed || {}).source !== "model") + reportHtml(rep);
+      if (weak.length) {
+        why += more(`Closest names we looked at (${weak.length}). None is close enough to count`,
+          weak.map(c => `<details class="candidate"><summary>${link("https://www.opensanctions.org/entities/" + encodeURIComponent(c.id) + "/", c.caption)} · score ${num(c.score)} · on ${plural((c.datasets || []).length, "list")}</summary>${(c.datasets || []).length ? listsHtml(c.datasets) : ""}</details>`).join(""));
       }
-      if (!clear && res.candidates.length > 1) {
-        why += more(`Other names that came close (${res.candidates.length - 1})`, res.candidates.slice(1).map(c => candidateHtml(c, false)).join(""));
-      }
-      why += more(`UN cross-check: ${esc(un.status)}`, `<p class="hint">${esc(cap(un.reason))}.${
+      why += more(`UN cross-check: ${esc(un.status)}`, `<p class="hint">${esc(cap(un.reason || ""))}.${
         un.best ? ` Best UN name: ${esc(un.best.matched_name)} (${esc(un.best.quality)}, ${num(un.best.score)}).` : ""}</p>`);
 
-      const proof = `<section class="proof" aria-labelledby="proof-title">
-          <h2 id="proof-title">Proof for your records<small>Show this to your bank or insurer. It says which lists, which date, and what matched.</small></h2>
-          <dl class="kv">
-            <dt>Checked at</dt><dd>${esc(res.checked_at)}</dd>
-            <dt>Data dates</dt><dd>${datesText(res)}</dd>
+      const dates = `${res.as_of ? `Sanctions data as of ${esc(res.as_of)}.` : "No live sanctions data date for this result."} UN list from ${esc(un.list_date || "not loaded")}.`;
+      const proof = `<section class="sect proof" aria-labelledby="proof-title">
+          <div class="mhead" id="proof-title">Proof for your records<small>Show this to your bank or insurer. It says which lists, which date, and what matched.</small></div>
+          <dl>
+            <dt>Checked at</dt><dd>${esc(fmt(res.checked_at))}</dd>
+            <dt>Data dates</dt><dd>${dates}</dd>
             <dt>Record</dt><dd>${esc(res.screen_id)}</dd>
           </dl>
-          ${(rep.sources || []).length ? `<div><strong>Sources</strong>${sourcesHtml(rep.sources)}</div>` : ""}
-          <div class="actions">
-            <button class="soft" type="button" id="copy">Copy record link</button>
+          ${(rep.sources || []).length ? `<div class="srcs"><strong>Sources</strong>${sourcesHtml(rep.sources)}</div>` : ""}
+          <div class="src">
+            <button type="button" id="copyLink">Copy record link</button>
             <a href="${auditUrl(res.screen_id)}" target="_blank" rel="noopener">View full audit record</a>
-            <span id="copied" class="hint"></span>
           </div>
           <p class="hint">${esc(res.disclaimer)}</p>
         </section>`;
 
-      $("out").innerHTML = answer + lists + next + `<section class="why"><h2>Why we think so</h2>${why}</section>` + proof;
-      $("copy").addEventListener("click", () => {
+      $("result").innerHTML = `
+        <section class="record ${v.cls} reveal">
+          <div>
+            <p class="for">Result for <b>${esc(typed)}</b></p>
+            <p class="meaning">${esc(v.line)}</p>
+            ${reasons}
+            ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
+            <div class="actions">
+              <button class="ghost" type="button" id="print">Print record</button>
+              <button class="ghost" type="button" id="copySum">Copy summary</button>
+              <button class="ghost" type="button" id="again">Check another name</button>
+              <span class="stampline">Checked ${esc(fmt(res.checked_at))}</span>
+            </div>
+          </div>
+          <div class="stamp" aria-label="Verdict: ${esc(word)}"><div><div class="w">${res.band === "clear" ? "&#10003; " : ""}${esc(word)}</div><div class="s">${v.sub}</div></div></div>
+          ${v.cls === "clear" ? `<div class="burst" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => {
+              const a = (i / 18) * Math.PI * 2, d = 90 + (i % 3) * 30;
+              const c = ["#14936b", "#5b4bdb", "#f2b84b", "#7bd3b2"][i % 4];
+              return `<i style="background:${c};--x:${Math.cos(a) * d}px;--y:${Math.sin(a) * d}px;animation-delay:${.35 + (i % 5) * .02}s"></i>`;
+            }).join("")}</div>` : ""}
+        </section>
+        ${possible.length ? `<div class="matches-wrap"><div class="mhead">${possible.length === 1 ? "1 possible match" : possible.length + " possible matches"}</div><div class="matches">${matches}</div></div>` : ""}
+        <section class="sect"><div class="mhead">What to do next</div>
+          <ol class="steps">${steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>
+        <section class="sect"><div class="mhead">Why we think so</div>${why}</section>
+        ${proof}`;
+
+      requestAnimationFrame(() => requestAnimationFrame(() =>
+        document.querySelectorAll(".track .fill").forEach(f => f.style.width = f.dataset.w + "%")));
+      $("print").onclick = () => window.print();
+      $("copySum").onclick = async () => {
+        const lines = [
+          `TradeCheck result for: ${typed}`,
+          `Verdict: ${word} (${v.line})`,
+          `Checked: ${fmt(res.checked_at)}`,
+          dates.replace(/<[^>]+>/g, ""),
+          ...possible.map(c => `Possible match: ${c.caption}, score ${num(c.score)}, on ${plural((c.datasets || []).length, "list")}`),
+          `Record: ${location.origin}${auditUrl(res.screen_id)}`,
+          res.disclaimer || "",
+        ].filter(Boolean);
+        toast(await copyText(lines.join("\n")) ? "Summary copied. Paste it into an email or your records." : "Couldn’t copy here. Use Print record instead.");
+      };
+      $("copyLink").onclick = async () => {
         const url = location.origin + auditUrl(res.screen_id);
-        navigator.clipboard.writeText(url).then(() => { $("copied").textContent = "Copied"; },
-          () => { $("copied").textContent = url; });  // no clipboard access: show the link to copy by hand
+        toast(await copyText(url) ? "Record link copied." : `Couldn’t copy. The link is: ${url}`);
+      };
+      const stamp = document.querySelector(".record .stamp"), rec = document.querySelector(".record");
+      if (stamp && !reduced && matchMedia("(hover: hover)").matches) {
+        rec.addEventListener("mousemove", e => {
+          const r = stamp.getBoundingClientRect();
+          const dx = (e.clientX - (r.left + r.width / 2)) / r.width, dy = (e.clientY - (r.top + r.height / 2)) / r.height;
+          stamp.style.transform = `rotate(${-8 + dx * 6}deg) translate(${dx * 6}px, ${dy * 6}px)`;
+        });
+        rec.addEventListener("mouseleave", () => { stamp.style.transform = ""; });
+      }
+      document.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+        toast(await copyText(b.dataset.copy) ? `Copied “${b.dataset.copy}”` : `Couldn’t copy. The name is: ${b.dataset.copy}`);
       });
+      document.querySelectorAll("[data-verify]").forEach(b => b.onclick = async () => {
+        const ok = await copyText(b.dataset.verify);
+        window.open(safeUrl(b.dataset.url), "_blank", "noopener");
+        toast(ok ? `Copied “${b.dataset.verify}”. Paste it into the search on the page that just opened.` : `Search for “${b.dataset.verify}” on the page that just opened.`);
+      });
+      $("again").onclick = () => { voyage.reset(); voyage.say("Ready to check. Each buoy is one jurisdiction’s sanctions lists."); drawRail(); q.value = ""; drawReadback(); window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); q.focus(); };
+      document.querySelectorAll(".match .head").forEach(b => b.onclick = () => {
+        const m = b.parentElement, open = m.classList.toggle("open");
+        b.setAttribute("aria-expanded", open);
+        b.querySelector(".more").textContent = open ? "Hide details" : "Show details";
+      });
+      offerJump();
     }
 
-    // Refresh the review queue panel. Runs on page load and after every screen or decision.
+    // ---------- "See your result" instead of auto-scroll ----------
+    function hideJump() { $("jump").classList.remove("show"); }
+    function offerJump(target = $("result")) {
+      const r = target.getBoundingClientRect();
+      if (r.top > window.innerHeight - 40) { $("jump").classList.add("show"); $("jump").onclick = () => { target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); hideJump(); }; }
+    }
+    window.addEventListener("scroll", () => { if ($("jump").classList.contains("show") && $("result").getBoundingClientRect().top < window.innerHeight - 160) hideJump(); }, { passive: true });
+
+    // ---------- Several names ----------
+    // Each name is a full screen: a model call, a match and sometimes a report, so one
+    // takes 2-45 seconds and spends credits. The batch is capped, and runs one at a time.
+    const BATCH_MAX = 10;
+    const parseNames = () => [...new Set($("names").value.split(/\n|;/).map(s => s.trim()).filter(Boolean))].slice(0, BATCH_MAX);
+    $("names").addEventListener("input", () => {
+      const all = new Set($("names").value.split(/\n|;/).map(s => s.trim()).filter(Boolean)).size;
+      $("ncount").textContent = (all === 1 ? "1 name" : `${all} names`) + (all > BATCH_MAX ? ` (the first ${BATCH_MAX} will be checked)` : "");
+    });
+    let batchResults = [];
+    async function checkAll() {
+      const names = parseNames();
+      if (!names.length) { $("names").focus(); toast("Paste at least one name, one per line."); return; }
+      const btn = $("checkAll"); btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>Checking`;
+      $("result").innerHTML = ""; batchResults = [];
+      $("batchOut").innerHTML = `
+        <div class="progress"><div id="pbar"></div></div>
+        <div class="ptext" id="ptext">Starting…</div>
+        <div class="summary" id="bsum"></div>
+        <table class="bt"><thead><tr><th>Name</th><th>Result</th><th>Closest match</th><th></th></tr></thead>
+        <tbody id="brows">${names.map((n, i) => `<tr class="row pending" data-i="${i}"><td>${esc(n)}</td><td class="c-v"><span class="spinner" style="border-color:var(--line);border-top-color:var(--iris)"></span></td><td class="c-top topm">Waiting…</td><td class="c-open"></td></tr>`).join("")}</tbody></table>`;
+      const counts = { Avoid: 0, Caution: 0, Clear: 0, Unknown: 0 };
+      document.body.classList.add("searched");
+      voyage.reset(); hideJump(); $("batchOut").hidden = false;
+      drawRail(Object.fromEntries(LISTS.map(l => [l.key, { cls: "", text: "Waiting" }])));
+      for (let i = 0; i < names.length; i++) {
+        $("ptext").textContent = `Checking ${i + 1} of ${names.length}: ${names[i]}`;
+        voyage.say(`Convoy: ship ${i + 1} of ${names.length}, “${names[i]}”`);
+        voyage.sail(START_AT + ((END_AT - START_AT) * (i + .5)) / names.length, 300);
+        const tr = document.querySelector(`#brows tr[data-i="${i}"]`);
+        try {
+          const res = await api("/screen", { question: names[i] }); batchResults[i] = res;
+          const word = verdictOf(res), v = VERDICT[word]; counts[word]++;
+          const top = (res.candidates || [])[0];
+          const hasMatch = top && top.score >= cutoffs(res).clear_below;
+          tr.className = "row " + v.cls;
+          tr.innerHTML = `<td>${esc(names[i])}</td><td class="c-v"><span class="mini">${esc(word)}</span></td>
+            <td class="c-top topm">${hasMatch ? `${esc(top.caption)}, score ${num(top.score)}` : res.band === "unknown" ? "Couldn’t check" : "No match on any list"}</td>
+            <td class="c-open"><span class="open-link">Open</span></td>`;
+          remember(names[i], word);
+        } catch (err) {
+          tr.className = "row unknown";
+          tr.innerHTML = `<td>${esc(names[i])}</td><td class="c-v"><span class="mini">Error</span></td><td class="c-top topm">${esc(err.message)}</td><td class="c-open"></td>`;
+          counts.Unknown++;
+        }
+        $("pbar").style.width = `${((i + 1) / names.length) * 100}%`;
+        $("bsum").innerHTML = [["Avoid", "avoid"], ["Caution", "review"], ["Clear", "clear", "Clear"], ["Unknown", "unknown"]]
+          .filter(([k]) => counts[k]).map(([k, c, label]) => `<span class="pill ${c}"><b>${counts[k]}</b>${label || k}</span>`).join("");
+        await sleep(120);
+      }
+      $("ptext").textContent = `Done. Checked ${names.length} ${names.length === 1 ? "name" : "names"}. Select a row to see its full result.`;
+      btn.disabled = false; btn.textContent = "Check all names";
+      const worst = counts.Avoid ? "Avoid" : counts.Caution ? "Caution" : counts.Unknown ? "Unknown" : "Clear";
+      const worstRes = batchResults.filter(Boolean).find(r => verdictOf(r) === worst);
+      if (worstRes) paintRail(worstRes);
+      await voyage.sail(END_AT, 500);
+      $("port").className = "port " + VERDICT[worst].cls;
+      voyage.bubble(worst === "Clear" ? "All cleared!" : "Convoy checked");
+      voyage.say(`Convoy checked: ${counts.Avoid} stopped, ${counts.Caution} held for review, ${counts.Clear} cleared.`);
+      loadQueue();
+    }
+    $("checkAll").addEventListener("click", checkAll);
+    $("batchOut").addEventListener("click", e => {
+      const tr = e.target.closest("tr.row"); if (!tr) return;
+      const res = batchResults[Number(tr.dataset.i)]; if (!res) return;
+      hideJump();
+      paintRail(res); voyage.reset(); voyage.finish(res); showDates(res); render(res);
+    });
+
+    function setMode(many) {
+      $("t-one").setAttribute("aria-selected", !many); $("t-many").setAttribute("aria-selected", many);
+      $("one").hidden = many; $("many").hidden = !many; $("batchOut").hidden = !many;
+      $("result").innerHTML = ""; drawRail(); voyage.reset(); hideJump();
+      voyage.say(many ? "Paste several names and the whole convoy sails through." : "Ready to check. Each buoy is one jurisdiction’s sanctions lists.");
+      (many ? $("names") : q).focus();
+    }
+    $("t-one").onclick = () => setMode(false);
+    $("t-many").onclick = () => setMode(true);
+
+    // ---------- Review queue ----------
+    // Refresh the queue panel. Runs on page load and after every screen or decision.
     async function loadQueue() {
       try {
         const items = await api("/queue");
         $("queue").innerHTML = items.length
           ? `<ul class="queue">${items.map(i => `<li><span>${esc(i.question)} · score ${num(i.score)}</span>
-               <button class="soft" type="button" data-id="${esc(i.screen_id)}">Review</button></li>`).join("")}</ul>`
+               <button class="ghost" type="button" data-id="${esc(i.screen_id)}">Review</button></li>`).join("")}</ul>`
           : `<p class="hint">No cases waiting for review.</p>`;
       } catch (err) {
-        $("queue").innerHTML = `<p class="err">Couldn't load the queue: ${esc(err.message)}</p>`;
+        $("queue").innerHTML = `<p class="err">Couldn’t load the queue: ${esc(err.message)}</p>`;
       }
     }
 
@@ -588,19 +1142,19 @@
     async function openCase(id) {
       const ev = {};  // the screen's events by step
       for (const e of await api(auditUrl(id))) ev[e.step] = e.data;
-      const top = (ev.layer1.candidates || [])[0];
+      const top = ((ev.layer1 || {}).candidates || [])[0];
       const topHtml = top
-        ? `<dl class="kv"><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
+        ? `<dl><dt>Name</dt><dd>${esc(top.caption)}</dd><dt>ID</dt><dd>${esc(top.id)}</dd>
              <dt>Score</dt><dd>${num(top.score)}</dd><dt>Listed on</dt><dd>${plural(top.datasets.length, "list")}</dd></dl>
            ${top.datasets.length ? listsHtml(top.datasets) : ""}`
         : `<p class="hint">The matcher returned no candidate.</p>`;
       $("case").innerHTML = `
         <div class="grid2">
-          <div class="panel"><h3>The query</h3>${fieldsHtml(ev.input.parsed)}</div>
+          <div class="panel"><h3>The query</h3>${fieldsHtml((ev.input || {}).parsed || {})}</div>
           <div class="panel"><h3>Top candidate</h3>${topHtml}</div>
         </div>
-        <p class="hint">In review because: ${ev.layer2.reasons.map(esc).join(" · ")}</p>
-        ${ev.layer3 ? `<div class="why">${reportHtml(ev.layer3)}${(ev.layer3.sources || []).length
+        <p class="hint">In review because: ${((ev.layer2 || {}).reasons || []).map(esc).join(" · ")}</p>
+        ${ev.layer3 ? `<div>${reportHtml(ev.layer3)}${(ev.layer3.sources || []).length
           ? more("Sources", sourcesHtml(ev.layer3.sources)) : ""}</div>` : ""}
         <div id="rv" class="panel">
           <h3>Decision</h3>
@@ -609,8 +1163,8 @@
           <label for="note" class="hint">Why? e.g. different date of birth</label>
           <textarea id="note" rows="3"></textarea>
           <div class="buttons">
-            <button type="button" data-decision="confirm">Confirm match</button>
-            <button type="button" class="soft" data-decision="dismiss">Dismiss as false positive</button>
+            <button class="primary" type="button" data-decision="confirm">Confirm match</button>
+            <button class="ghost" type="button" data-decision="dismiss">Dismiss as false positive</button>
           </div>
           <p id="rvmsg" class="hint"></p>
         </div>`;
@@ -630,32 +1184,29 @@
         }
       });
     }
-
     // One listener for the whole queue: each Review button carries its screen ID.
     $("queue").addEventListener("click", e => {
       const id = e.target.dataset && e.target.dataset.id;
       if (id) openCase(id).catch(err => { $("case").innerHTML = `<p class="err">${esc(err.message)}</p>`; });
     });
 
-    // The question box: screen the question, show the result, then refresh the queue.
-    $("f").addEventListener("submit", async e => {
-      e.preventDefault();
-      const question = $("q").value.trim();
-      if (!question) return;
-      $("go").disabled = true;
-      $("out").innerHTML = "<div class='working'><span class='spinner' aria-hidden='true'></span><span>Checking the lists&hellip; a review or hit case can take up to a minute while the report is written.</span></div>";
-      document.body.classList.add("searched");
-      try {
-        render(await api("/screen", { question }));
-        loadQueue();
-      } catch (err) {
-        $("out").innerHTML = `<p class="err">Error: ${esc(err.message)}</p>`;
-      } finally {
-        $("go").disabled = false;
-      }
+    // ---------- Wiring ----------
+    const submit = () => { const n = q.value.trim(); if (n) check(n); else q.focus(); };
+    // Handle the button and Enter key directly, so search also works where form submission is blocked (e.g. sandboxed previews).
+    form.addEventListener("submit", e => { e.preventDefault(); submit(); });
+    go.addEventListener("click", submit);
+    q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); submit(); } });
+    $("chips").addEventListener("click", e => {
+      const b = e.target.closest("[data-q]"); if (!b) return;
+      q.value = b.dataset.q; check(b.dataset.q);
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) { e.preventDefault(); const t = $("one").hidden ? $("names") : q; t.focus(); t.select(); }
+      if (e.key === "Escape" && document.activeElement === q) { q.value = ""; drawReadback(); }
     });
 
-    loadQueue();
+    drawReadback(); drawChips(); boot();
+  })();
   </script>
 </body>
 </html>

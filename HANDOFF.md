@@ -358,3 +358,67 @@ names every missing key). 123 tests pass and no key leaks into the test environm
   the model report passed first time; worth a look from Dhruv.
 - Test runs wrote real rows to `data/*.sqlite` (three screens and one dismissed case, reviewer
   "Mansi (UI test)"). `data/` is gitignored.
+
+---
+
+## Part 6: the page is now Mansi's own design (`design/preview.html`), wired to the live API
+
+**Supersedes Part 4.** Part 4 restyled Dhruv's page; that was not what was wanted. `app/static/index.html`
+is now built **from `design/preview.html`**: its markup, CSS and interactions (boot loader, hero with
+the route map, "One name / Several names" tabs, ask bar, chips, the voyage track, verdict stamp,
+match cards with the score meter, batch table, toast, print). Only its **data layer** was replaced,
+because the mock spoke the old backend's contract. Dhruv's page is still in git history
+(`b6ff11f`) and on `origin/dhruv/ui-fix-oct-09-2026` if anyone wants it back.
+
+### How the design maps onto the current API
+
+| Design element | Now driven by |
+| --- | --- |
+| Request | `POST /screen {question}` (was `{name}`) |
+| Verdict stamp, colour, message | `res.band` (hit / review / clear / unknown), never the label text |
+| Voyage track | 5 buoys: Canada, US, EU, UK, UN (was 3 lists). Each buoy's state comes from which jurisdiction the top candidate's datasets are on (`DATASETS` table) |
+| Match cards | `res.candidates` at or above `res.cutoffs.clear_below`. Meter ticks sit at the server's cutoffs (40% / 80% on the 50-100 meter) |
+| Weak candidates | Not shown as matches. Folded under "Closest names we looked at. None is close enough to count" |
+| Boot loader | `GET /health`, then `GET /queue` (was `/stats`, which no longer exists) |
+| Read-back under the box | The fields the model extracted (`res.parsed`) after a screen; helper text before |
+| Chips | The three demo questions from `RUN.md`, then recent screens from localStorage |
+| Batch | Sequential `POST /screen`, capped at **10** names (each is a model call + match, up to ~45 s) |
+| New on the page | "What to do next", "Why we think so" (cited report, fields, UN cross-check), "Proof for your records" (dates, record id, sources, audit link), **Waiting for review** queue with the case view and confirm / dismiss |
+
+### Behaviour kept from the backend work (do not regress)
+- Every server string goes through `esc()`; only http(s) URLs become hrefs (`safeUrl`).
+- The review decision uses plain buttons, **not a form**: Enter in a field cannot submit it.
+- Unknown is never green; a replayed result says "Live check failed; showing the saved result".
+- Clear reads "Good to go. This name isn't on any sanctions list we checked", with the limit
+  stated in the same sentence ("covers these lists only, as of the dates shown").
+
+### Deliberate departures from `design/preview.html`
+- Removed the "Preview using saved results" banner, the `MOCK`/`STATS` data and the `fetch` override.
+- The old client-side name "read-back" (accent folding, legal-suffix stripping) is gone: the model
+  now extracts the party, so that preview would have shown something the server does not do.
+- The three source buttons (OFAC search, Canada list, XML download) became "Check on OpenSanctions"
+  and "Copy listed name": there is no XML file per list any more.
+- The preview's meter markup used `class="vtrack"` where its CSS and script expect `.track`
+  (a rename slip); the meter now uses `.track`.
+- No dark mode (the preview has none; Dhruv's page did).
+
+### Verified
+- 123 tests pass; JS syntax checked with `node --check`; every element id the script uses exists.
+- Against fixed fixtures for all four bands (offline): Clear, Caution, Avoid, Unknown render with the
+  right stamp, rail, meter, steps and proof; queue opens a case; Enter sends nothing; Dismiss records
+  the decision and empties the queue; batch (4 names, one duplicate removed) with row open and tab
+  switching; no console errors; no horizontal overflow at 400 px.
+- Against the real backend: a Clear screen rendered correctly, and the **failure paths** rendered
+  correctly (see below).
+
+### BLOCKER found in testing: the OpenSanctions key is out of quota
+During the live run, `POST /screen` for new names returned **Unknown** because
+`OpenSanctions answered HTTP 402` (Payment Required: the API key's credits are used up; the testing
+in this session spent them). Effects:
+- Names already screened still replay from `data/*.sqlite` as "saved result" (the three demo
+  questions are saved), so the demo cases still show.
+- Any **new** name is Unknown until the key has credits or a new key is put in `.env`. This is
+  the designed fail-safe, and the new page shows it correctly ("not a clear result", never green).
+- **Not verified live on the new page:** a fresh Avoid / Caution with a model-written report and
+  citations, and a real case through the review queue. Those need a working key; the page was
+  checked for them only with fixtures. Please run the three demo questions once credits are back.
