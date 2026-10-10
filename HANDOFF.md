@@ -88,3 +88,116 @@ the UN cross-check for non-Latin names.
    in the browser and via `curl`, checking each against the table there.
 3. Work a Caution case through the review queue and confirm the audit log records it.
 4. Do the visual pass listed above, then open a PR into `main`.
+
+---
+
+## Part 2: UI redesign (`design/preview.html`) and how to integrate it
+
+**Status: designed, not implemented.** `app/static/index.html` is still Dhruv's page. The
+redesign exists only as a static mock, now saved in the repo as
+[`design/preview.html`](design/preview.html) (kept outside `app/static` so the server does
+not serve it). Open it directly in a browser to see the target look.
+
+### Why it can't be dropped in
+
+`preview.html` was built against the **old** backend (the OFAC/Canada pipeline that `main`
+deleted). It talks to a contract that no longer exists:
+
+| | `design/preview.html` | Current backend |
+| --- | --- | --- |
+| Request to `POST /screen` | `{ "name": ... }` | `{ "question": ... }` |
+| Result fields | `verdict`, `hits[]`, `lists_screened`, `query` | `band`, `label`, `score`, `reasons`, `status`, `candidates`, `un_check`, `report`, `parsed`, `live`, `fetched_at`, `as_of`, `checked_at`, `screen_id`, `disclaimer` |
+| `GET /stats` (list counts) | used by the loader and the "voyage" strip | does not exist |
+| Review queue, `/review`, `/audit` | absent | part of the app |
+| Data | hard-coded `MOCK` object and a "Preview using saved results" banner | live |
+
+### Design decisions (what to keep, change, drop)
+
+Keep the visual language of the preview, and keep Dhruv's behaviour and safety rules.
+
+**Keep from the preview (look and feel):**
+- Palette and type: iris accent, Fraunces (headings) and Figtree (body) via Google Fonts,
+  the CSS variables in `:root`, card/shadow style.
+- Header/brand, hero with the animated trade-route SVG, the large ask bar.
+- The verdict as a rotated **stamp** inside a `.record` card, coloured by band.
+- Candidates as expandable match cards with a score meter.
+- "One name / Several names" tabs; keyboard: `/` focuses search, `Esc` clears.
+- `prefers-reduced-motion` and print styles.
+
+**Keep from Dhruv's `index.html` (behaviour, do not regress):**
+- Request body is `{question}`. The ask bar placeholder is a question
+  ("Can we ship to Northwind Metals FZE in Dubai?").
+- Colour is keyed by `band`, not `label` (map `hit -> avoid`, `review -> review`,
+  `clear -> clear`, `unknown -> unknown`) so renaming a label cannot turn the card grey.
+  Reuse `CLASS`, `LINE`, `DATASETS`, `GROUPS`, `listsHtml`, `candidateHtml`, `claimsHtml`,
+  `reportHtml`, `fieldsHtml`, `api` verbatim; they are tested by hand against the API.
+- `esc()` on every server string before `innerHTML`; `safeUrl()` so only http(s) become hrefs.
+- Missing data shows as **Unknown**, never green. A replayed result shows the "Live check
+  failed; showing the saved result from ..." note. `as_of` is only shown when present.
+- The review decision uses plain buttons, **not a form**, so Enter in a field can never submit
+  an irreversible decision. Keep that.
+- Show every audit link: `/audit/{screen_id}`.
+- Show the three note cases: `parsed.source` of `fallback` or `saved`, `report.check` of
+  `error` or `template`, and `steps.news == "unavailable"`.
+
+**Change:**
+- "Name" input becomes a question box; the model extracts the party. Show the extracted
+  fields (`parsed`: schema, name, country, birth_date, registration_number) as the
+  "What we screened" read-back under the ask bar, replacing the preview's client-side token
+  read-back (which depended on old normalization).
+- The "voyage" strip (ship sailing past one buoy per list) is repurposed from "lists" to the
+  **three layers**: Matcher -> UN check -> Report. While a screen is in flight the ship
+  advances on a timer and is labelled as indicative (a screen takes 4-40 s, there is no
+  progress feed). When the result arrives, set each buoy from the real response:
+  matcher = band and score (and "saved result" when `live` is false), UN check =
+  `un_check.status` (agree / disagree / unavailable), report = `report.check`
+  (`pass`, `template`, `error`, `fixed`).
+- Batch mode ("Several names"): call `POST /screen` **sequentially**, one line per question.
+  Each call spends credits and can take up to ~40 s, so cap the list (suggest 10) and say so
+  in the UI. Clicking a row shows its full result.
+- Score meter ticks at **0.70** (review) and **0.90** (hit). These are
+  `layer2.CLEAR_BELOW` and `layer2.HIT_AT`; read them from `band.cutoffs` if exposed,
+  otherwise keep in sync by hand.
+- Footer: Dhruv's wording (OpenSanctions CC BY-NC 4.0, not legal advice). The preview's
+  "US and Canadian lists only" footer is no longer true; the matcher covers many lists.
+- Sample-question chips use the three demo questions in `RUN.md`, not the mock data.
+
+**Drop:**
+- The `MOCK` / `STATS` objects, the mock banner and every `fetch("/stats")`.
+- The boot loader that waited for `/stats` (there is nothing to wait for; `/health` is
+  instant). If a loader is still wanted, tie it to the in-flight `/screen` only.
+- The copy-to-clipboard of old `hits[]`; rebuild it from the new result if wanted.
+
+**Add (missing from the preview, required for one app):**
+- Review queue panel: `GET /queue`, "Open" -> `GET /audit/{id}` to rebuild the case (query,
+  top candidate, reason, report), then `POST /review/{id}` with `decision`, `note`,
+  `reviewer`. Show 400 / 404 / 409 and 422 messages as `api()` already does.
+- Refresh the queue after every screen and after every decision.
+
+### Dark mode
+
+Dhruv's page follows `prefers-color-scheme: dark`; the preview is light only (several
+colours are hard-coded, e.g. `#efeef6`, `#ebeaf5`). Decide whether to keep dark mode. If so,
+move those hard-coded colours into variables first.
+
+### Suggested way to build it
+
+1. Start from `design/preview.html` for markup and CSS, and paste Dhruv's script helpers in.
+2. Replace its data layer with `api("/screen", {question})`, `api("/queue")`, `api("/audit/..")`,
+   `api("/review/..")`.
+3. Test **without credits**: run the offline tests; for the UI, start uvicorn with
+   `pipeline.screen` monkey-patched or with saved responses (see `tests/fakes.py` and
+   `tests/conftest.py`) so no live call is made. Check Avoid, Caution, Clear\*, Unknown,
+   a replayed result, a failed report and an empty and a non-empty queue.
+4. Check desktop (1024 px) and phone (375 px) widths, keyboard-only use, and Enter in the
+   review note field not submitting.
+5. Keep `tests/test_app.py` green; the page is plain static HTML so no test changes are needed
+   unless endpoints change.
+
+### Open questions for Dhruv
+
+- Is it fine for the UN check to transliterate non-Latin names (Part 1, item 1)?
+- Should `/screen` also return the cutoffs (`band.cutoffs`) so the UI need not hard-code 0.70
+  and 0.90? Small change in `tradecheck/pipeline.py`.
+- Is a `/stats`-style endpoint wanted (UN list date, record count, `as_of`)? The UI already
+  gets `as_of` and `un_check.list_date` per screen, so probably not.
