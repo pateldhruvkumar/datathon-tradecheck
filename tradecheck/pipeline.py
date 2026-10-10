@@ -103,6 +103,7 @@ def screen(question: str) -> dict:
         "band": band["band"],
         "label": layer2.LABEL[band["band"]],
         "score": band["score"],
+        "cutoffs": band["cutoffs"],
         "reasons": band["reasons"],
         "status": status,
         "candidates": candidates,

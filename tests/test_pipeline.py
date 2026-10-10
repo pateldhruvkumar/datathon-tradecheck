@@ -57,6 +57,7 @@ def test_hit(world):
     res = pipeline.screen("Is Khawa Panga Mandro sanctioned?")
     assert (res["band"], res["label"], res["status"], res["live"]) == ("hit", "Avoid", "flagged", True)
     assert res["report"]["check"] == "pass"
+    assert res["cutoffs"] == {"clear_below": 0.70, "hit_at": 0.90}
     assert res["as_of"] == "2026-10-08T06:00:00"
     assert res["disclaimer"] == "Not legal advice. Screening reflects the listed sources as of the dates shown."
     assert _steps(res) == ["input", "layer1", "layer2", "layer3", "final"]
