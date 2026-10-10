@@ -121,7 +121,7 @@
 
     /* ---------- Voyage track: the loader and list status in one strip ---------- */
     .voyage { margin-top: 18px; background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 4px 18px 10px; }
-    .vtrack { position: relative; height: 122px; }
+    .vtrack { position: relative; height: 134px; }
     .sea { position: absolute; left: 0; right: 0; top: 40px; height: 14px; border-radius: 7px;
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14'%3E%3Cpath d='M0 7 Q10 0 20 7 T40 7 V14 H0Z' fill='%23d9d4fb'/%3E%3C/svg%3E") repeat-x;
       animation: sea 2.5s linear infinite; }
@@ -256,6 +256,7 @@
     .error { background: var(--card); border: 1.5px solid var(--avoid); border-radius: 16px; padding: 18px 22px; box-shadow: var(--shadow); }
     .error b { color: var(--avoid); }
 
+    footer .limit { margin: 0 0 8px; color: var(--ink); font-weight: 600; }
     footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--soft); max-width: 70ch; }
 
     /* Mode tabs */
@@ -357,13 +358,14 @@
     ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 12px; width: 32px; height: 32px; border-radius: 50%;
       background: var(--iris-wash); color: var(--iris); font: 800 16px/32px var(--serif); text-align: center; }
 
-    details.more { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
-    details.more + details.more { margin-top: 10px; }
-    details.more > summary { cursor: pointer; padding: 14px 18px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-    details.more > summary::-webkit-details-marker { display: none; }
-    details.more > summary::after { content: "+"; font: 800 20px/1 var(--serif); color: var(--iris); }
-    details.more[open] > summary::after { content: "\2013"; }
-    .det { padding: 0 18px 18px; min-width: 0; }
+    details.acc { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    details.acc + details.acc { margin-top: 10px; }
+    details.acc > summary { cursor: pointer; padding: 14px 18px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    details.acc > summary::-webkit-details-marker { display: none; }
+    details.acc > summary::after { content: "+"; font: 800 20px/1 var(--serif); color: var(--iris); }
+    details.acc[open] > summary::after { content: "\2013"; }
+    /* Long alias lists, addresses and notes must wrap inside the card, never run past it. */
+    .det { padding: 0 18px 18px; min-width: 0; overflow-wrap: anywhere; }
     .det > :first-child { margin-top: 0; }
     .sect > p { margin: 0 0 12px; }
     ul.claims, ol.claims { margin: 0; padding-left: 20px; }
@@ -418,6 +420,11 @@
     .unavail p { margin: 0 0 10px; max-width: 70ch; }
     .unavail .src { margin-top: 8px; }
 
+    /* The five stops sit in a fixed-height track. On a phone each column is about 60px wide,
+       so a country name and a status such as "Weaker match listed" wrap to 2-3 lines. */
+    @media (max-width: 480px) {
+      .vtrack { height: 184px; }
+    }
     @media (max-width: 800px) {
       ul.kinds li { grid-template-columns: 1fr; }
       .vtrack .list .meta { display: none; }
@@ -426,7 +433,7 @@
       .grid2 { grid-template-columns: 1fr; }
       ol.steps li { padding-left: 58px; }
     }
-    @media print { .queue-sec, #jump, #toast { display: none !important; } details.more > .det { display: block; } }
+    @media print { .queue-sec, #jump, #toast { display: none !important; } details.acc > .det { display: block; } }
 
     @media print {
       #boot, .hero, .voyage, footer, .kbd, .actions button, .more { display: none !important; }
@@ -487,6 +494,7 @@
       </svg>
       <div>
         <h1>Who are you about to <em>trade</em> with?</h1>
+        <p id="scope"></p>
         <p>Check a buyer, supplier or person against the Canadian, US, EU, UK and UN sanctions lists in seconds, with the source and date behind every answer.</p>
       </div>
     </section>
@@ -546,6 +554,7 @@
     </section>
 
     <footer>
+      <p id="datalimit" class="limit"></p>
       Sanctions data: OpenSanctions (CC BY-NC 4.0), plus our own copy of the UN Security Council list as a cross-check. The matcher decides; the model only explains. Missing data shows as Unknown, never green. This is a screening aid, not legal advice.
     </footer>
   </div>
@@ -623,7 +632,13 @@
     ];
     const kindsOf = topics => KINDS.filter(k => (topics || []).some(t => k.re.test(t)));
     const joinWords = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
-    const SCOPE = "We look for sanctioned parties, politically exposed persons (PEPs) and individuals of security interest.";
+    // What a check covers, in words a business owner knows. Shown under the heading and in a
+    // Clear result, so a "no match" is read as covering these kinds of listing only.
+    const SCOPE = "We check if a name is on a government sanctions list, is a politically exposed person (called a “PEP”), or is linked to crime or a security case.";
+    $("scope").textContent = SCOPE;
+    // The one data limit, in the footer, the proof box and the copied summary.
+    const DATA_LIMIT = "Data limit: we search OpenSanctions data only, so a name or list it doesn’t carry won’t be found here.";
+    $("datalimit").textContent = DATA_LIMIT;
 
     // Why a check could not finish, from the matcher's error text, in words a business owner
     // can act on. 402 is the one that was hit in practice: the API account is out of credits.
@@ -704,7 +719,7 @@
 
     // One section of "Why we think so", closed unless open is set.
     const more = (title, body, open) =>
-      `<details class="more"${open ? " open" : ""}><summary>${title}</summary><div class="det">${body}</div></details>`;
+      `<details class="acc"${open ? " open" : ""}><summary>${title}</summary><div class="det">${body}</div></details>`;
 
     // Each citation becomes a numbered link to its source. The numbers match the source list
     // in "Proof for your records".
@@ -884,7 +899,7 @@
           (parsed.source !== "model" ? `<span>&nbsp;(fields were not read by the model)</span>` : "");
         return;
       }
-      $("readback").innerHTML = `<span>${esc(SCOPE)} Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
+      $("readback").innerHTML = `<span>Type a name, or a whole question. TradeCheck picks out the name, country and registration number for you.</span>`;
     }
 
     // ---------- Chips ----------
@@ -1043,7 +1058,7 @@
             <button type="button" id="copyLink">Copy record link</button>
             <a href="${auditUrl(res.screen_id)}" target="_blank" rel="noopener">View full audit record</a>
           </div>
-          <p class="hint">${esc(res.disclaimer)}</p>
+          <p class="hint">${esc(DATA_LIMIT)} ${esc(res.disclaimer)}</p>
         </section>`;
 
       $("result").innerHTML = `
@@ -1087,6 +1102,7 @@
           dates.replace(/<[^>]+>/g, ""),
           ...possible.map(c => `Possible match: ${c.caption}, score ${num(c.score)}, on ${plural((c.datasets || []).length, "list")}`),
           `Record: ${location.origin}${auditUrl(res.screen_id)}`,
+          DATA_LIMIT,
           res.disclaimer || "",
         ].filter(Boolean);
         toast(await copyText(lines.join("\n")) ? "Summary copied. Paste it into an email or your records." : "Couldn’t copy here. Use Print record instead.");
