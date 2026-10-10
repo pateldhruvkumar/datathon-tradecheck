@@ -248,3 +248,79 @@ What changed because of it:
 | `origin/dhruv/ui-fix-oct-09-2026` | merged here; not yet in `main` (open a PR from this branch or Dhruv's) |
 | `origin/mansi/web_ui-oct-09-2026` | this branch |
 | `origin/fix-canada-parser` | obsolete, targets the deleted OFAC/Canada pipeline |
+
+---
+
+## Part 4: the redesign is implemented (supersedes the "not implemented" notes in Parts 2 and 3)
+
+`app/static/index.html` is now **Dhruv's page restyled with the `design/preview.html` look**. Option
+(a) from Part 3 was taken: his information design, logic and safety rules are unchanged; only
+the visual layer and the Clear wording changed. Backend files were not touched.
+
+### What changed
+
+- **Look:** iris palette, Fraunces (headings) and Figtree (body) from Google Fonts with system
+  fallbacks, hero with the animated trade-route map, ask bar, rotated verdict **stamp**, card
+  style for tiles / steps / sections / queue. The map and ships are decorative (`aria-hidden`).
+  Dhruv's CSS variable names were kept, so his dark mode and `.answer` / `.tile` / `.more`
+  class names still work; only the values and a few rules changed.
+- **Compact hero:** after the first search the hero shrinks (`body.searched`) so results sit
+  under the search bar.
+- **Loading:** the plain "Checking..." text is now a small spinner card.
+- **Clear result, rewritten for plain understanding** (`render()`, `headline()`, `STEPS.clear`,
+  `STAMP`):
+  - Headline: "Good to go. This name isn't on any sanctions list we checked."
+  - Body names the party and the lists compared ("wasn't found on the Canadian, US, EU, UK or
+    UN sanctions lists, and nothing on them is close to it. You can go ahead.").
+  - Tag "Clear · good to go", a green check stamp, green "No match" tiles.
+  - First "What to do next" step: "You can go ahead with this name."
+  - It no longer says "the closest name we found is ...", and the score reasons are hidden.
+    A weak candidate is not a match and was confusing there. It is still available, relabelled
+    "Closest names we looked at. None is close enough to count", under "Why we think so".
+  - A small footnote keeps the honest limit: Clear means no match on those lists as of the
+    dates shown, and to check again before each shipment. The `*` in `Clear*` still means that.
+  - The "four answers" legend now says "Not on the lists we checked. Good to go."
+- **Stamp words** are keyed by **band**, not label (`STAMP`, like `CLASS`), so renaming a label
+  in `tradecheck/layer2.py` cannot change the colour or stamp.
+
+### Decisions and trade-offs
+
+- Font change: Dhruv chose Atkinson Hyperlegible for low-vision readers; the preview uses
+  Figtree and Fraunces, which are less purpose-built for that. If accessibility matters more
+  than the look, switch `--body` back. Text colours were darkened from the preview's palette
+  to keep contrast for the avoid / caution / clear text on their washes.
+- Batch mode ("Several names") and the ship "voyage" strip from the preview were **not**
+  ported (see Part 2). Each screen costs credits and up to ~40 s, so they were left out of
+  this pass.
+- Wording says "good to go" for Clear because the user asked for it. It is a plain-language
+  reading of a screening result, not a legal clearance; the footnote and the existing
+  disclaimer say so. Check with Dhruv / whoever owns the compliance wording.
+
+### Verified (all offline: no API credits spent)
+
+- 121 tests pass.
+- Served the **real page and real endpoints** with `pipeline.screen`, `audit.queue`,
+  `audit.record` and `audit.review` replaced by fixed fixtures for each band (Clear, Caution,
+  Avoid, Unknown), then drove the page in a browser:
+  - Landing page, hero, ask bar: renders, no console errors.
+  - Clear, Avoid, Caution and Unknown results render with the right colour, stamp, tiles and
+    next steps; Unknown shows "Not checked" tiles and the fallback note.
+  - Review queue: Caution case appears in the queue, "Review" opens the case, Enter in the
+    name field sends no request, "Dismiss as false positive" records the decision and the
+    queue empties.
+  - Phone width (375 px): no horizontal overflow for Clear and Unknown.
+  - Dark mode (`prefers-color-scheme: dark`): Clear result readable.
+- The fixture harness is not in the repo (it lived in a scratchpad). It is ~100 lines: import
+  `app.main`, then monkey-patch `pipeline.screen`, `pipeline.start`, `audit.queue`,
+  `audit.record`, `audit.review`. Worth committing under `tests/` or `design/` if you want
+  repeatable visual checks.
+
+### Still NOT verified
+
+- **Live** `/screen` for the three demo questions with real keys (spends credits), so the real
+  report text, citations and saved-response replay on the new styling are unchecked. The
+  fixtures use the same response shape, so the risk is low but not zero.
+- Real `/audit` and `/review` against the SQLite audit log (the endpoints and 4xx paths were
+  checked earlier on this branch, but not from the new page).
+- Print layout (`@media print` is new) and keyboard-only navigation.
+- Safari / Firefox rendering (only Chromium was used).

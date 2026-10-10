@@ -5,86 +5,129 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TradeCheck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,800;1,9..144,500&family=Figtree:wght@400;500;600;700;800&display=swap" />
   <style>
     /* One column for a business owner: the answer first, then the five lists, what to do
-       next, why we think so, and the proof for their records. Atkinson Hyperlegible is
-       built for low-vision readers; the system fonts take over if Google Fonts is offline. */
+       next, why we think so, and the proof for their records. The look comes from the
+       design/preview.html redesign (iris palette, Fraunces + Figtree, verdict stamp); the
+       content and behaviour are Dhruv's. System fonts take over if Google Fonts is offline. */
     :root {
-      --bg: #f3f5f8; --surface: #ffffff; --ink: #18202e; --muted: #576274; --line: #dce1e8;
-      --accent: #2f3f86; --accent-ink: #ffffff; --accent-soft: #e7eaf6;
-      --avoid: #a12020; --avoid-bg: #fbe3e2;
-      --caution: #8d5b00; --caution-bg: #fcefd6;
-      --clear: #19673d; --clear-bg: #e0f2e7;
-      --unknown: #4f5866; --unknown-bg: #e8ebef;
-      --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-      --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+      --bg: #f5f6fb; --surface: #ffffff; --ink: #1f1b3d; --muted: #66638a; --line: #e3e2f0;
+      --accent: #5b4bdb; --accent-ink: #ffffff; --accent-soft: #ece9ff; --accent-strong: #4a3bc9;
+      --avoid: #b3173f; --avoid-bg: #fde8ee;
+      --caution: #94580a; --caution-bg: #fff2dc;
+      --clear: #0f7a58; --clear-bg: #e0f5ec;
+      --unknown: #596078; --unknown-bg: #eceef4;
+      --track: #efeef6;
+      --shadow: 0 1px 2px rgba(31, 27, 61, .06), 0 8px 24px -12px rgba(31, 27, 61, .18);
+      --display: "Fraunces", Georgia, "Times New Roman", serif;
+      --body: "Figtree", "Segoe UI", system-ui, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0f131b; --surface: #171d28; --ink: #e6e9f0; --muted: #9aa4b5; --line: #2a3242;
-        --accent: #a9b6f2; --accent-ink: #10162b; --accent-soft: #1f2741;
-        --avoid: #ff9e98; --avoid-bg: #301817;
+        --bg: #14122a; --surface: #1d1b38; --ink: #ece9ff; --muted: #a9a6c9; --line: #322f58;
+        --accent: #a99fff; --accent-ink: #15122e; --accent-soft: #29254f; --accent-strong: #c3bbff;
+        --avoid: #ff9eb3; --avoid-bg: #34171f;
         --caution: #f3c463; --caution-bg: #2c2412;
-        --clear: #8cd9ac; --clear-bg: #14281d;
-        --unknown: #b3bcc9; --unknown-bg: #1f2530;
+        --clear: #7fe0b4; --clear-bg: #123024;
+        --unknown: #b6bcd0; --unknown-bg: #232640;
+        --track: #2b2850; --shadow: 0 8px 24px -12px rgba(0, 0, 0, .6);
         color-scheme: dark;
       }
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--body); padding: 28px 16px 64px; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); padding: 24px 16px 72px; font-variant-numeric: tabular-nums; }
     a { color: var(--accent); text-underline-offset: 3px; }
-    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-    .wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 28px; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+    .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
     .wrap > * { min-width: 0; }
     #out { display: grid; gap: 28px; }
     #out:empty { display: none; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-    header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-    .logo { margin: 0; font: 800 24px var(--display); letter-spacing: -.4px; }
-    .logo span { color: var(--accent); }
+    /* ---------- Top and hero ---------- */
+    header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 600 22px/1 var(--display); letter-spacing: -.01em; }
+    .brand svg { width: 30px; height: 30px; flex: none; }
     header p { margin: 0; font-size: 14px; color: var(--muted); }
 
-    h2 { margin: 0 0 12px; font: 700 22px/1.2 var(--display); letter-spacing: -.3px; text-wrap: balance; }
-    h2 small { display: block; font: 400 15px/1.5 var(--body); color: var(--muted); letter-spacing: 0; margin-top: 4px; }
+    .hero { position: relative; padding: 28px 0 0; min-height: 190px; transition: min-height .4s ease, padding .4s ease; }
+    .hero h1 { margin: 0; font: 600 clamp(32px, 5vw, 54px)/1.04 var(--display); letter-spacing: -.025em; max-width: 15ch; position: relative; transition: font-size .4s ease; }
+    .hero h1 em { font-style: italic; font-weight: 500; color: var(--accent); }
+    .hero .sub { margin: 14px 0 0; max-width: 50ch; color: var(--muted); font-size: 18px; position: relative; }
+    body.searched .hero { min-height: 0; padding-top: 6px; }
+    body.searched .hero h1 { font-size: clamp(24px, 3vw, 32px); max-width: none; }
+    body.searched .hero .sub { display: none; }
+    body.searched .routes { width: 26%; opacity: .6; top: -10px; }
+
+    .routes { position: absolute; right: -8px; top: 0; width: 44%; max-width: 440px; height: auto; pointer-events: none; transition: width .4s ease, opacity .4s ease; }
+    .routes .route { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 2 7; stroke-linecap: round; opacity: .45; animation: dash 3s linear infinite; }
+    .routes .city .pulse { fill: var(--accent); opacity: .25; transform-box: fill-box; transform-origin: center; animation: ping 2.4s ease-out infinite; }
+    .routes .city circle:not(.pulse) { fill: var(--accent); }
+    .routes text { font: 600 11px var(--body); fill: var(--muted); }
+    .routes pattern circle { fill: var(--line); }
+    @keyframes dash { to { stroke-dashoffset: -36; } }
+    @keyframes ping { from { transform: scale(.6); opacity: .45; } to { transform: scale(2.6); opacity: 0; } }
+
     .hint { color: var(--muted); font-size: 14px; margin: 0; }
     .note { color: var(--caution); font-size: 14px; margin: 0; }
     .err { color: var(--avoid); margin: 0; }
+    h2 { margin: 0 0 12px; font: 600 24px/1.2 var(--display); letter-spacing: -.01em; text-wrap: balance; }
+    h2 small { display: block; font: 400 15px/1.5 var(--body); color: var(--muted); letter-spacing: 0; margin-top: 4px; }
 
-    form#f { display: grid; gap: 8px; }
-    form#f label { font-weight: 700; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    input[type=text], textarea {
-      font: inherit; color: var(--ink); background: var(--surface);
-      border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%;
-    }
-    input[type=text]:focus, textarea:focus { border-color: var(--accent); outline: none; }
-    .row input { flex: 1 1 280px; min-width: 0; font-size: 18px; padding: 14px 16px; }
-    button {
-      font: 700 16px var(--body); color: var(--accent-ink); background: var(--accent);
-      border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer;
-    }
-    .row button { font-size: 17px; padding: 14px 26px; }
+    /* ---------- The ask bar ---------- */
+    form#f { display: grid; gap: 10px; }
+    .ask { display: flex; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 10px; box-shadow: var(--shadow); transition: border-color .2s, box-shadow .2s; }
+    .ask:focus-within { border-color: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft), var(--shadow); }
+    .ask input { flex: 1 1 320px; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--ink); font: 500 clamp(18px, 2.4vw, 22px) var(--body); padding: 12px 14px; }
+    .ask input::placeholder { color: var(--muted); opacity: .75; }
+    .ask button { border: 0; border-radius: 12px; padding: 0 28px; min-height: 56px; background: var(--accent); color: var(--accent-ink); font: 700 17px var(--body); transition: transform .12s, background .2s; }
+    .ask button:hover { background: var(--accent-strong); }
+    .ask button:active { transform: scale(.97); }
+    .ask button:disabled { opacity: .6; cursor: progress; }
+    button { font: 700 16px var(--body); color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 12px; padding: 12px 22px; cursor: pointer; }
     button.soft { color: var(--accent); background: var(--accent-soft); }
     button:disabled { opacity: .6; cursor: default; }
+    input[type=text], textarea { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%; }
+    input[type=text]:focus, textarea:focus { border-color: var(--accent); outline: none; }
+    .ask input[type=text] { border: 0; width: auto; padding: 12px 14px; border-radius: 0; }
 
-    /* The answer card. Its colour comes from the band, never from the label text. */
-    .answer { border-radius: 20px; padding: 28px; display: grid; gap: 10px; }
-    .answer.avoid { background: var(--avoid-bg); --tone: var(--avoid); }
-    .answer.caution { background: var(--caution-bg); --tone: var(--caution); }
-    .answer.clear { background: var(--clear-bg); --tone: var(--clear); }
-    .answer.unknown { background: var(--unknown-bg); --tone: var(--unknown); }
-    .tag { justify-self: start; font-weight: 700; font-size: 14px; color: var(--tone); border: 2px solid var(--tone); border-radius: 999px; padding: 2px 14px; }
-    .answer h2 { margin: 0; font-size: clamp(28px, 6vw, 42px); line-height: 1.1; letter-spacing: -.8px; }
-    .answer p { margin: 0; max-width: 60ch; }
+    .working { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); color: var(--muted); }
+    .spinner { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .7s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- The answer card. Its colour comes from the band, never from the label text. ---------- */
+    .answer { position: relative; overflow: hidden; background: var(--surface); border: 1.5px solid var(--line); border-radius: 22px; box-shadow: var(--shadow);
+      display: grid; grid-template-columns: 1fr auto; gap: 16px 32px; align-items: center; padding: 34px 34px 30px; }
+    .answer::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--tone); }
+    .answer.avoid { --tone: var(--avoid); --wash: var(--avoid-bg); }
+    .answer.caution { --tone: var(--caution); --wash: var(--caution-bg); }
+    .answer.clear { --tone: var(--clear); --wash: var(--clear-bg); }
+    .answer.unknown { --tone: var(--unknown); --wash: var(--unknown-bg); }
+    .atext { display: grid; gap: 10px; min-width: 0; }
+    .tag { justify-self: start; font-weight: 700; font-size: 14px; color: var(--tone); background: var(--wash); border-radius: 999px; padding: 3px 14px; }
+    .answer h2 { margin: 0; font-size: clamp(27px, 4.4vw, 40px); line-height: 1.1; letter-spacing: -.02em; }
+    .answer p { margin: 0; max-width: 56ch; }
     .answer ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--muted); }
     .closeness { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 15px; color: var(--muted); }
     .meter { display: flex; gap: 4px; }
-    .meter i { width: 22px; height: 10px; border-radius: 3px; background: var(--surface); }
+    .meter i { width: 22px; height: 10px; border-radius: 3px; background: var(--track); }
     .meter i.on { background: var(--tone); }
+    .stamp { width: 190px; height: 190px; border-radius: 50%; display: grid; place-content: center; text-align: center; color: var(--tone); background: var(--wash);
+      border: 4px solid var(--tone); box-shadow: inset 0 0 0 8px var(--wash), inset 0 0 0 10px var(--tone); transform: rotate(-8deg); animation: thump .6s cubic-bezier(.2, 1.5, .4, 1) both; }
+    .stamp .w { font: 800 32px/1.05 var(--display); letter-spacing: -.02em; }
+    .stamp .s { font-size: 13px; font-weight: 700; margin-top: 8px; letter-spacing: .04em; text-transform: uppercase; }
+    .stamp .tick { font-size: 44px; line-height: 1; margin-bottom: 4px; }
+    @keyframes thump { 0% { transform: rotate(-24deg) scale(2.2); opacity: 0; } 60% { opacity: 1; } 100% { transform: rotate(-8deg) scale(1); } }
+    .answer .atext > * { animation: rise .45s .15s ease-out both; }
+    @keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .fine { font-size: 13px; color: var(--muted); }
 
+    /* ---------- The five lists ---------- */
     .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    .tile { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+    .tile { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 12px; display: grid; gap: 2px; align-content: start; min-width: 0; box-shadow: var(--shadow); }
     .tile b { font: 800 26px/1 var(--display); }
     .tile span { font-size: 13px; color: var(--muted); }
     .tile em { font-style: normal; font-weight: 700; font-size: 14px; margin-top: 6px; }
@@ -93,19 +136,19 @@
     .tile.listed em { color: var(--tone); }
     .tile.weak em { color: var(--muted); }
     .tile.none em { color: var(--clear); }
+    .tiles.clear .tile.none { background: var(--clear-bg); border-color: transparent; box-shadow: none; }
+    .tiles.clear .tile.none em::before { content: "\2713\00a0"; }
     .tile.unchecked em { color: var(--unknown); }
     .tiles + .hint { margin-top: 10px; }
 
     ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 10px; }
-    ol.steps li { counter-increment: step; background: var(--surface); border-radius: 14px; padding: 14px 16px 14px 60px; position: relative; }
-    ol.steps li::before {
-      content: counter(step); position: absolute; left: 16px; top: 12px; width: 30px; height: 30px; border-radius: 50%;
-      background: var(--accent-soft); color: var(--accent); font: 800 16px/30px var(--display); text-align: center;
-    }
+    ol.steps li { counter-increment: step; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px 14px 62px; position: relative; }
+    ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 12px; width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent); font: 800 16px/32px var(--display); text-align: center; }
 
     .why > p { margin: 0 0 12px; }
     .why > .note { margin-bottom: 12px; }
-    details.more { background: var(--surface); border-radius: 14px; }
+    details.more { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; }
     details.more + details.more { margin-top: 8px; }
     details.more > summary { cursor: pointer; padding: 14px 16px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
     details.more > summary::-webkit-details-marker { display: none; }
@@ -129,51 +172,90 @@
     details.candidate:first-child { border-top: 0; padding-top: 0; }
     details.candidate summary { cursor: pointer; }
 
-    .proof { border: 2px dashed var(--line); border-radius: 16px; padding: 18px 20px; display: grid; gap: 12px; }
+    .proof { border: 2px dashed var(--line); border-radius: 18px; padding: 18px 20px; display: grid; gap: 12px; }
     .proof h2 { margin: 0; }
     .proof .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
     .answers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .answers div { border-radius: 14px; padding: 12px; font-size: 14px; }
-    .answers b { display: block; font: 700 17px var(--display); }
+    .answers b { display: block; font: 600 17px var(--display); }
     .answers .avoid { background: var(--avoid-bg); color: var(--avoid); }
     .answers .caution { background: var(--caution-bg); color: var(--caution); }
     .answers .clear { background: var(--clear-bg); color: var(--clear); }
     .answers .unknown { background: var(--unknown-bg); color: var(--unknown); }
 
-    .queue { list-style: none; margin: 0; padding: 4px 16px; background: var(--surface); border-radius: 14px; }
+    .queue { list-style: none; margin: 0; padding: 4px 16px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; }
     .queue li { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
     .queue li:first-child { border-top: 0; }
     .queue button { padding: 6px 14px; font-size: 14px; }
     #case { display: grid; gap: 16px; margin-top: 16px; }
     #case:empty { display: none; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .panel { background: var(--surface); border-radius: 14px; padding: 14px 16px; min-width: 0; }
-    .panel h3 { margin: 0 0 8px; font: 700 17px var(--display); }
+    .panel { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px; min-width: 0; }
+    .panel h3 { margin: 0 0 8px; font: 600 18px var(--display); }
     #rv { display: grid; gap: 10px; }
     #rv .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
     footer { font-size: 13px; color: var(--muted); }
 
-    @media (max-width: 640px) {
+    @media (max-width: 760px) {
+      .routes { display: none; }
+      .hero { padding-top: 16px; min-height: 0; }
+      .ask button { width: 100%; }
+      .answer { grid-template-columns: 1fr; padding: 26px 20px 22px; }
+      .stamp { width: 150px; height: 150px; grid-row: 1; justify-self: start; }
+      .stamp .w { font-size: 22px; } .stamp .s { font-size: 11px; } .stamp .tick { font-size: 30px; }
       .tiles { grid-template-columns: repeat(2, 1fr); }
       .answers { grid-template-columns: repeat(2, 1fr); }
       .grid2 { grid-template-columns: 1fr; }
-      .answer { padding: 20px; }
       dl.kv { grid-template-columns: 110px 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+    @media print {
+      .hero, .ask, .answers, #queue, #case, footer { display: none !important; }
+      body { background: #fff; }
+      .answer, .tile, details.more { box-shadow: none; }
+      details.more > .det { display: block; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1 class="logo">Trade<span>Check</span></h1>
+      <div class="brand">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5b4bdb"/><path d="M9.5 16.5l4.2 4.2 8.8-9.4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        TradeCheck
+      </div>
       <p>Free sanctions check across the Canadian, US, EU, UK and UN lists</p>
     </header>
 
+    <section class="hero">
+      <svg class="routes" viewBox="0 0 560 250" aria-hidden="true">
+        <defs><pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3"/></pattern></defs>
+        <rect width="560" height="250" fill="url(#dots)" rx="24"/>
+        <path id="r1" class="route" d="M70 78 Q 200 10 340 62"/>
+        <path id="r2" class="route" d="M70 78 Q 250 230 500 120"/>
+        <path id="r3" class="route" d="M130 175 Q 240 110 340 62"/>
+        <path id="r4" class="route" d="M175 95 Q 300 150 430 150"/>
+        <g class="city"><circle class="pulse" cx="70" cy="78" r="6"/><circle cx="70" cy="78" r="4"/><text x="58" y="66" text-anchor="end">Vancouver</text></g>
+        <g class="city"><circle class="pulse" cx="175" cy="95" r="6"/><circle cx="175" cy="95" r="4"/><text x="183" y="88">Toronto</text></g>
+        <g class="city"><circle class="pulse" cx="130" cy="175" r="6"/><circle cx="130" cy="175" r="4"/><text x="122" y="196" text-anchor="middle">Mexico</text></g>
+        <g class="city"><circle class="pulse" cx="340" cy="62" r="6"/><circle cx="340" cy="62" r="4"/><text x="350" y="56">Rotterdam</text></g>
+        <g class="city"><circle class="pulse" cx="430" cy="150" r="6"/><circle cx="430" cy="150" r="4"/><text x="430" y="172" text-anchor="middle">Mumbai</text></g>
+        <g class="city"><circle class="pulse" cx="500" cy="120" r="6"/><circle cx="500" cy="120" r="4"/><text x="500" y="105" text-anchor="middle">Shanghai</text></g>
+        <g><path d="M-7 -3 L5 0 L-7 3 L-4 0 Z M-2 -6 L1 0 L-2 6 Z" fill="#5b4bdb"/><animateMotion dur="7s" repeatCount="indefinite" rotate="auto"><mpath href="#r1"/></animateMotion></g>
+        <g><rect x="-8" y="-3.5" width="16" height="7" rx="2" fill="#5b4bdb"/><rect x="-5" y="-6" width="5" height="3" fill="#f2b84b"/><animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#r2"/></animateMotion></g>
+        <g><rect x="-7" y="-3" width="14" height="6" rx="2" fill="#14936b"/><animateMotion dur="11s" repeatCount="indefinite" rotate="auto" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#r3"/></animateMotion></g>
+      </svg>
+      <h1>Who are you about to <em>trade</em> with?</h1>
+      <p class="sub">Check a buyer, supplier or person against the Canadian, US, EU, UK and UN sanctions lists in seconds, with the source and date behind every answer.</p>
+    </section>
+
     <form id="f">
-      <label for="q">Who are you about to trade with?</label>
-      <div class="row">
+      <label for="q" class="sr">Who are you about to trade with?</label>
+      <div class="ask">
         <input id="q" type="text" placeholder="e.g. Can we ship to Northwind Metals FZE in Dubai?" autocomplete="off" autofocus />
         <button id="go" type="submit">Check this name</button>
       </div>
@@ -188,7 +270,7 @@
       <div class="answers">
         <div class="avoid"><b>Avoid</b>Strong match. Stop and get advice.</div>
         <div class="caution"><b>Caution</b>Close name. Someone checks first.</div>
-        <div class="clear"><b>Clear*</b>No match on the lists we checked.</div>
+        <div class="clear"><b>Clear*</b>Not on the lists we checked. Good to go.</div>
         <div class="unknown"><b>Unknown</b>We couldn't check. Not a yes.</div>
       </div>
     </section>
@@ -220,8 +302,12 @@
     const LINE = {
       hit: "Strong sanctions match.",
       review: "Possible match, flagged for human review.",
-      clear: "No match across the lists checked.",
+      clear: "Not on any sanctions list we checked, so you can go ahead.",
       unknown: "The live check failed. Treat this as Unknown, not clear.",
+    };
+    // The word and caption on the verdict stamp. Keyed by band, like CLASS.
+    const STAMP = {
+      hit: ["Avoid", "Stop"], review: ["Caution", "Hold off"], clear: ["Clear", "Good to go"], unknown: ["Unknown", "Not checked"],
     };
     const SECTIONS = [["who_matched", "Who matched"], ["why_it_matched", "Why it matched"],
                       ["differences", "Differences"], ["sanctions", "Sanctions"], ["news", "News"]];
@@ -233,7 +319,8 @@
             "Get advice from a trade lawyer or your bank's compliance team before you go ahead."],
       review: ["Don't ship or take payment until the review is done.",
                "Ask your buyer for a registration or licence number, then check again with it. It tells two similar names apart."],
-      clear: ["Keep this record with your deal file. It shows which lists were checked and when.",
+      clear: ["You can go ahead with this name. Nothing on the lists we checked is close to it.",
+              "Keep this record with your deal file. It shows which lists were checked and when.",
               "Check again before each new shipment or contract. Lists change often."],
       unknown: ["Try the check again in a few minutes.",
                 "Don't treat this as clear. Wait for a finished check before you go ahead."],
@@ -374,7 +461,7 @@
       const n = res.candidates.length ? res.candidates[0].datasets.length : 0;
       if (res.band === "hit") return n ? `Stop. This name matches one on ${plural(n, "list")}.` : "Stop. This name is a strong sanctions match.";
       if (res.band === "review") return n ? `Hold off for now. A very similar name is on ${plural(n, "list")}.` : "Hold off for now. A reviewer needs to check this name.";
-      if (res.band === "clear") return "No match on the lists we checked.";
+      if (res.band === "clear") return "Good to go. This name isn't on any sanctions list we checked.";
       return "We couldn't finish the check. Treat this as not clear.";
     }
 
@@ -416,13 +503,26 @@
     function render(res) {
       const un = res.un_check, rep = res.report || {}, top = res.candidates[0];
       const status = res.status === "unknown" ? "" : ` · ${esc(res.status.replace("_", " "))}`;
+      const clear = res.band === "clear";
+      const [stampWord, stampLine] = STAMP[res.band] || STAMP.unknown;
+      // A clear result says what was compared and when, in plain words. It leaves out the
+      // "closest name" and the score reasons: a weak candidate there only confuses.
+      const who = res.parsed.name ? `"${esc(res.parsed.name)}"` : "This name";
+      const body = clear
+        ? `<p>${who} wasn't found on the Canadian, US, EU, UK or UN sanctions lists, and nothing on them is close to it.
+             You can go ahead.</p>`
+        : `<p>${top ? `The closest name we found is "${esc(top.caption)}". ` : ""}${esc(LINE[res.band])}</p>`;
       let answer = `<section class="answer ${CLASS[res.band] || "unknown"}" aria-label="Result">
-          <span class="tag">${esc(res.label)}${status}</span>
-          <h2>${esc(headline(res))}</h2>
-          <p>${top ? `The closest name we found is "${esc(top.caption)}". ` : ""}${esc(LINE[res.band])}</p>
-          ${closenessHtml(res)}
-          ${res.reasons.length ? `<ul>${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
-          ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
+          <div class="atext">
+            <span class="tag">${clear ? "Clear · good to go" : `${esc(res.label)}${status}`}</span>
+            <h2>${esc(headline(res))}</h2>
+            ${body}
+            ${closenessHtml(res)}
+            ${!clear && res.reasons.length ? `<ul>${res.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+            ${clear ? `<p class="fine">* Clear means no match on the lists above, as of the dates shown below. Check again before each new shipment.</p>` : ""}
+            ${!res.live && res.fetched_at ? `<p class="note">Live check failed; showing the saved result from ${esc(res.fetched_at)}.</p>` : ""}
+          </div>
+          <div class="stamp" aria-hidden="true">${clear ? `<span class="tick">&#10003;</span>` : ""}<span class="w">${esc(stampWord)}</span><span class="s">${esc(stampLine)}</span></div>
         </section>`;
 
       const lists = `<section><h2>The lists we checked<small>Canada and the four lists Canadian exporters are most often asked about</small></h2>${tilesHtml(res)}</section>`;
@@ -433,10 +533,14 @@
       // The fields start open when they weren't extracted by the model, since that changes
       // what was actually screened.
       let why = more("What we screened", fieldsHtml(res.parsed), res.parsed.source !== "model") + reportHtml(rep);
-      if (top) {
+      if (clear && top) {
+        // Weak candidates are not matches. Say so, so nobody reads one as a hit.
+        why += more(`Closest names we looked at (${res.candidates.length}). None is close enough to count`,
+                    res.candidates.map(c => candidateHtml(c, false)).join(""));
+      } else if (top) {
         why += more(`Every list the top match is on (${top.datasets.length})`, top.datasets.length ? listsHtml(top.datasets) : `<p class="hint">No lists recorded.</p>`);
       }
-      if (res.candidates.length > 1) {
+      if (!clear && res.candidates.length > 1) {
         why += more(`Other names that came close (${res.candidates.length - 1})`, res.candidates.slice(1).map(c => candidateHtml(c, false)).join(""));
       }
       why += more(`UN cross-check: ${esc(un.status)}`, `<p class="hint">${esc(cap(un.reason))}.${
@@ -539,7 +643,8 @@
       const question = $("q").value.trim();
       if (!question) return;
       $("go").disabled = true;
-      $("out").innerHTML = "<p class='hint'>Checking&hellip; a review or hit case can take up to a minute while the report is written.</p>";
+      $("out").innerHTML = "<div class='working'><span class='spinner' aria-hidden='true'></span><span>Checking the lists&hellip; a review or hit case can take up to a minute while the report is written.</span></div>";
+      document.body.classList.add("searched");
       try {
         render(await api("/screen", { question }));
         loadQueue();
