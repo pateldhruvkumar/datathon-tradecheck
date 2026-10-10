@@ -201,3 +201,50 @@ move those hard-coded colours into variables first.
   and 0.90? Small change in `tradecheck/pipeline.py`.
 - Is a `/stats`-style endpoint wanted (UN list date, record count, `as_of`)? The UI already
   gets `as_of` and `un_check.list_date` per screen, so probably not.
+
+---
+
+## Part 3: update, Dhruv's newer UI is now merged (read this before Part 2)
+
+After Part 2 was written, `origin/dhruv/ui-fix-oct-09-2026` (commit `b6ff11f`, "rebuild the
+page as a plain answer for business owners") turned up. It was **not** in `main`, so the
+branch was missing the latest UI. It is now merged into this branch (merge `f8ad1fb`); no
+conflicts, 121 tests pass.
+
+What changed because of it:
+
+- `app/static/index.html` is now Dhruv's rebuilt page (about 34 KB), **not** the 22 KB page
+  Part 2 describes. It is the live UI and the one to extend. It keeps `api()`, the
+  `CLASS`/`LINE`/`SECTIONS`/`DATASETS`/`GROUPS` tables, `listsHtml`, `candidateHtml`,
+  `reportHtml`, `fieldsHtml`, `loadQueue` and `openCase`, and adds `headline`,
+  `closenessHtml`, `tilesHtml` (the jurisdiction tiles), `datesText`, a "What to do next"
+  list, a "Proof for your records" block, the "four answers you can get" explainer and a
+  `STEPS` table. It still follows `prefers-color-scheme: dark`.
+- `POST /screen` now also returns **`cutoffs`** (`clear_below`, `hit_at`) from
+  `tradecheck/pipeline.py`. This answers the open question in Part 2: do not hard-code 0.70
+  and 0.90 in the score meter; read `res.cutoffs`. The new page already does.
+- Part 2's "Keep from Dhruv's index.html" list still applies in spirit, but the file names
+  above are the current ones. Re-read the new page before porting; where Part 2 and the
+  code disagree, trust the code.
+
+### Where the work stands now
+
+1. **Backend and Dhruv's UI are integrated and in sync** on this branch (all remotes fetched
+   on 2026-10-10; `origin/main` is `a24b70b` and has nothing newer).
+2. **The `design/preview.html` redesign is still not implemented.** Decision needed: either
+   (a) restyle Dhruv's new page with the preview's look (palette, fonts, stamp, route map)
+   and keep his information design, which is the smaller and safer change, or (b) rebuild
+   the layout from the preview. Option (a) is recommended: Dhruv's page now carries product
+   decisions (the "four answers", next steps, proof block) that the preview does not have.
+3. Still unverified: live `/screen` runs for the three demo cases, the review flow end to
+   end, and a visual pass of the **new** page in a browser (desktop and phone width).
+   Earlier visual checks were of the older page.
+
+### Branches to know about
+
+| Branch | Note |
+| --- | --- |
+| `origin/main` | `a24b70b`, base of this work |
+| `origin/dhruv/ui-fix-oct-09-2026` | merged here; not yet in `main` (open a PR from this branch or Dhruv's) |
+| `origin/mansi/web_ui-oct-09-2026` | this branch |
+| `origin/fix-canada-parser` | obsolete, targets the deleted OFAC/Canada pipeline |
