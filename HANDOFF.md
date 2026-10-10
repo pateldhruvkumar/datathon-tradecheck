@@ -324,3 +324,37 @@ the visual layer and the Clear wording changed. Backend files were not touched.
   checked earlier on this branch, but not from the new page).
 - Print layout (`@media print` is new) and keyboard-only navigation.
 - Safari / Firefox rendering (only Chromium was used).
+
+---
+
+## Part 5: "the UI broke the functionality" was a missing-keys server, now fixed in code
+
+**Symptom:** on Mansi's laptop every new name came back Unknown or as a replayed saved result.
+**Cause:** the dev server on port 8000 was started as `uvicorn app.main:app --reload` **without**
+`--env-file .env`. The app never loaded `OPENROUTER_API_KEY` etc., so the model call failed
+(`fallback_reason: "OPENROUTER_API_KEY is not set"`), and the live match was unavailable.
+It was not caused by the UI restyle: the same page against a correctly keyed server worked for
+Avoid, Caution and Clear (see Part 4 and the checks below).
+
+**Fix (`app/main.py`):** `load_env()` runs at app startup (not at import), reads the project
+`.env` with `override=False` (a variable already set in the shell wins) and the startup log
+warns with the **names** of any key still unset. `uvicorn app.main:app` now works with or
+without `--env-file`. Two tests were added in `tests/test_app.py` (loads without overriding;
+names every missing key). 123 tests pass and no key leaks into the test environment.
+
+**Verified live, no `--env-file`, no keys in the shell:**
+- a fresh server on a new port: Clear demo question `live=True`, `parsed.source=model`;
+- the existing `--reload` server on port 8000 picked up the change by itself and screened a
+  never-seen name in the browser: Clear, good-to-go page, no fallback notes.
+- Earlier on the keyed server: Avoid (17 lists, 28 sources, 36 citations), Caution (queued),
+  case opened from the real audit log, Dismiss recorded, 409 / 400 / 422 paths as designed.
+
+**Notes for the next person**
+- `.env` must exist at the repo root (copy `.env.example`). If keys are missing the app still
+  starts and says so in the log; screens then fall back to saved results or Unknown, by design.
+- `RUN.md` was updated to say `--env-file` is now optional.
+- The Avoid demo case returned `report.check = "template"` once (the model report failed its
+  citation check, so the code-written report was shown). Designed fallback, but `RUN.md` says
+  the model report passed first time; worth a look from Dhruv.
+- Test runs wrote real rows to `data/*.sqlite` (three screens and one dismissed case, reviewer
+  "Mansi (UI test)"). `data/` is gitignored.

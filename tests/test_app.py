@@ -57,3 +57,26 @@ def test_a_blank_question_is_rejected():
 
 def test_the_audit_record_of_an_unknown_screen_is_404():
     assert _status(main.audit_endpoint, "nope") == 404
+
+
+def _unset(monkeypatch, *names):
+    """Unset variables so monkeypatch also removes whatever the test loads into them."""
+    for name in names:
+        monkeypatch.setenv(name, "x")  # records "was unset" so teardown deletes it again
+        monkeypatch.delenv(name)
+
+
+def test_load_env_reads_the_keys_without_overriding_the_environment(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_text("OPENSANCTIONS_API_KEY=from-file\nOPENROUTER_API_KEY=from-file\n")
+    _unset(monkeypatch, "OPENSANCTIONS_API_KEY", "TAVILY_API_KEY")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "already-set")
+    missing = main.load_env(env_file)
+    assert main.os.environ["OPENSANCTIONS_API_KEY"] == "from-file"
+    assert main.os.environ["OPENROUTER_API_KEY"] == "already-set"  # the real environment wins
+    assert missing == ["TAVILY_API_KEY"]
+
+
+def test_load_env_with_no_file_names_every_missing_key(tmp_path, monkeypatch):
+    _unset(monkeypatch, *main.KEYS)
+    assert main.load_env(tmp_path / "missing.env") == list(main.KEYS)
